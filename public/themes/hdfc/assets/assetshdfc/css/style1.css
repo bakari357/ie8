@@ -1,0 +1,26 @@
+#thumb-slider { float:left; clear:both; width:995px; padding:0px 0px 0px 0px; margin:0px 0px 0px 0px; }
+#slideshow {list-style:none; color:#fff}
+ul#slideshow  {list-style:none; margin:0px; padding:0px;}
+ul#slideshow  li{margin:0px; padding:0px; background:none; color:#000000;}
+#slideshow span {display:none}
+#thumb-slider #wrapper {width:100%; margin:0px auto; display:none}
+#thumb-slider #wrapper * {margin:0; padding:0}
+#fullsize { position:relative; width:617px; height:365px; margin:0 auto !important; ext-align:center; padding:2px; border:0px solid #ccc; background:#FFFFFF}
+#information {position:absolute; display:none; bottom:0; width:100%; height:0; background:#000; color:#fff; overflow:hidden; z-index:200; opacity:.7; filter:alpha(opacity=70)}
+#information h3 {padding:4px 8px 3px; font-size:14px}
+information p {padding:0px; margin:0px; line-height:1px; font-size:1px;}
+#image { float:left; width:40%;  }
+#image img {position:absolute; border-right:0px!important; border-left:0px!important; z-index:25; width:617px; height:365px;  }
+.imgnav {position:absolute; width:10%; height:381px; cursor:pointer; z-index:150}
+#imgprev {left:-30%; background:url(images/left.png) left center no-repeat}
+#imgnext {right:-30%; background:url(images/right.png) right center no-repeat}
+#imglink {position:absolute; height:365px; display:none; width:100%; z-index:100; opacity:.4; filter:alpha(opacity=40)}
+.linkhover {background:url(images/link.gif) center center no-repeat}
+#thumbnails {margin-top:15px!important;}
+#slideleft {float:left; width:15px; height:73px; margin-right:5px!important; background:url(images/scroll-left.gif) center center no-repeat; }
+/*#slideleft:hover {background-color:#333}*/
+#slideright {float:right; width:15px; height:73px; background: url(images/scroll-right.gif) center center no-repeat}
+/*#slideright:hover {background-color:#333}*/
+#slidearea {float:left; position:relative; width:96%; margin-left:5px; height:73px; overflow:hidden}
+#slider {position:absolute; left:0; height:73px; }
+#slider img {cursor:pointer; border:1px solid #212021; padding:0px; margin-right:7px!important;}

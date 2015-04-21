@@ -1,0 +1,20 @@
+{
+    "name": "solitude/profiler",
+    "description": "",
+    "authors": [
+        {
+            "name": "Tamilselvan",
+            "email": "tamil.selvan@mahiti.org"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0",
+        "illuminate/support": "4.1.*"
+    },
+    "autoload": {
+        "psr-0": {
+            "Solitude\\Profiler": "src/"
+        }
+    },
+    "minimum-stability": "stable"
+}

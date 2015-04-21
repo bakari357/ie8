@@ -1,0 +1,301 @@
+/* ######### CSS for Shade Tabs. Remove if not using ######### */
+.tab_content_box { float:left; width:100%; padding:0px 0px 0px 0px; margin:20px 0px 0px 0px;  }
+
+
+.shadetabs{
+padding: 0px 0;
+margin-left:0px;
+margin-top: 0px;
+margin-bottom: 0;
+list-style-type: none;
+background:none;
+border-bottom:1px solid #dfdfdf;
+height:45px;
+margin-right:0;
+text-align: left; /*set to left, center, or right to align the menu as desired*/
+font-family: 'HelveticaNeueRegular', Arial, Helvetica, sans-serif; 
+
+}
+.shadetabs a { color:#a2a2a2; font-size:14px; font-weight:normal;}
+.shadetabs a:hover { color:#262626; font-size:14px; font-weight:normal;}
+.shadetabs a.selected{ color:#262626; font-size:14px; font-weight:normal;}
+
+ul.shadetabs li{
+	display:block;
+	float:left;
+	margin:0px 0px 0px 0px;
+	text-align:left;
+	background:#none;
+	height:45px;
+	line-height:45px;
+	color:#a2a2a2;
+	padding:0;
+	list-style-type:none;
+}
+
+.shadetabs li.tab{
+	width:auto;
+	height:45px;
+	line-height:45px;
+	background:none;
+	display:block;
+	border-bottom:0px;
+}
+
+.shadetabs li.tab a{
+	position: relative;
+	z-index: 1;
+	background:none;
+	width:auto;
+	padding:0px 15px 0px 15px;
+	display:block;
+	text-decoration:none;
+	letter-spacing:0px;
+	
+}
+.shadetabs li.tab a:hover{
+	background:url(../images/menu-active.jpg) no-repeat bottom center;
+	width:auto;
+	padding:0px 15px 0px 15px;
+	text-decoration:none;
+	height:46px;
+}
+
+.shadetabs li.tab a.selected, .shadetabs li.tab a.selected:hover { /*selected main tab style */
+	position: relative;
+	background:url(../images/menu-active.jpg) no-repeat bottom center;
+	width:auto;
+	padding:0px 15px 0px 15px;
+	height:46px;
+	line-height:45px;
+}
+
+
+
+.tab_content_top {
+	height:9px;
+	font-size:1px;
+	}
+.tab_content_bott {
+	height:9px;
+	font-size:1px;
+	}
+.tab_content_center {float:left; width:100%; height:auto;	}
+.tabcontent{
+	display:none;
+	padding:0px;
+	margin:0px 0px 0px 0px;
+	width:100%;
+}
+.tabcontent_box{
+	padding:20px 0px 0px 0px;
+	width:100%;
+}
+
+
+
+@media print {
+.tabcontent {
+display:block !important;
+}
+}
+.clear { clear:both; padding:0px 0px 0px 0px; margin:0px 0px 0px 0px; }
+.txt_space { padding:5px 10px 0px 10px; margin:0px 0px 0px 0px;  overflow:auto; overflow-x:hidden; height:320px; }
+
+
+
+.tabset_tabs {
+    background: url("linormal.png") repeat scroll 0 0 transparent !important;
+    float: left;
+    height: 30px;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    white-space: nowrap;
+    width: 735px;
+    z-index: 2;
+}
+.tabset_tabs li {
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+.tabset_tabs a {
+    color: #000000;
+    float: left;
+    font-size: 13px;
+    font-weight: bold;
+    height: 27px;
+    padding: 7px 25px 5px;
+    text-decoration: none;
+}
+.tabset_tabs a:hover {
+    background: url("liactive.png") no-repeat scroll center bottom transparent;
+    color: #000000 !important;
+    padding: 7px 25px 5px;
+}
+.tabset_tabs a.active {
+    background: url("liactive.png") no-repeat scroll center bottom transparent;
+    color: black !important;
+    padding: 7px 25px 5px;
+}
+.tabset_tabs li.firstchild a {
+    border-left-width: 1px;
+}
+.tabset_content {
+    background-color: white;
+    display: none;
+    float: left;
+    height: 500px;
+    margin: 0;
+    overflow: scroll;
+    padding: 0;
+    position: relative;
+    width: 735px;
+    z-index: 1;
+}
+.tabset_label {
+    display: none;
+}
+.tabset_content_active {
+    display: block;
+}
+.tabset_content, .tabset_label {
+    display: block;
+}
+#table_cont {
+    color: #000000;
+    font-size: 12px;
+    font-weight: normal;
+    margin: 20px 0 0 20px;
+    padding: 0 0 20px;
+    text-align: center;
+    width: 685px;
+}
+#table_cont .heading {
+    font-family: Georgia;
+    font-size: 18px;
+    padding: 0 0 10px;
+    text-align: left;
+    text-transform: uppercase;
+}
+#table_cont .heading i {
+    font-size: 12px;
+    font-weight: normal;
+    text-transform: capitalize;
+}
+#table_cont .heading1 {
+    color: #ffffff;
+    font-family: Georgia;
+    font-size: 22px;
+    padding: 0 0 10px;
+    text-align: left;
+    text-decoration: underline;
+    text-transform: uppercase;
+}
+#table_cont .rowdiff {
+    background: none repeat scroll 0 0 #EFEFEF;
+}
+#table_cont td, #table_cont th {
+}
+#table_cont .aligntxt {
+    padding-left: 10px;
+    text-align: left;
+}
+.how_to_meaure {
+    border: medium none;
+    float: left;
+    height: 736px;
+    margin: 10px 0 0 96px;
+    width: 503px;
+}
+.top_measure {
+    border: medium none;
+    float: left;
+    height: 365px;
+    margin: 44px;
+    width: 635px;
+}
+.bottom_measure {
+    border: medium none;
+    float: left;
+    height: 754px;
+    margin: 0 0 0 232px;
+    width: 284px;
+}
+
+
+
+.tab_content_box_new { float:left; width:350px; padding:0px 0px 0px 0px; margin:20px 0px 0px 0px;  }
+.tab_content_center_new {float:left; width:350px; background:#ffffff; height:auto;	}
+.shadetabs_new {
+padding: 0px 0;
+margin-left:0px;
+margin-top: 0px;
+margin-bottom: 0;
+list-style-type: none;
+background:none;
+text-align:center;
+height:44px;
+margin-right:0;
+width:350px;
+text-align: left; /*set to left, center, or right to align the menu as desired*/
+font-family: 'HelveticaNeueRegular', Arial, Helvetica, sans-serif; 
+
+}
+.shadetabs_new a { color:#004386; font-size:12px; font-weight:normal;}
+.shadetabs_new a:hover { color:#ffffff; font-size:12px; font-weight:normal;}
+.shadetabs_new a.selected{ color:#ffffff; font-size:12px; font-weight:normal;}
+
+ul.shadetabs_new li{
+	display:block;
+	float:left;
+	margin:0px 0px 0px 0px;
+	text-align:left;
+	background:#none;
+	height:44px;
+	line-height:44px;
+	color:#a2a2a2;
+	padding:0;
+	list-style-type:none;
+}
+
+.shadetabs_new li.tab{
+	width:175px;
+	text-align:center;
+	height:44px;
+	line-height:44px;
+	background:none;
+	display:block;
+	border-bottom:0px;
+}
+
+.shadetabs_new li.tab a{
+	position: relative;
+	z-index: 1;
+	background:url(../images/tab_new_nor.png) no-repeat top center;
+	width:auto;
+	padding:0px 0px 0px 0px;
+	display:block;
+	text-decoration:none;
+	letter-spacing:0px;
+}
+.shadetabs_new li.tab a:hover{
+	/*background:url(../images/tab_new_ovr.png) no-repeat top center;*/
+	color: #004386;
+	width:auto;
+	padding:0px 0px 0px 0px;
+	text-decoration:none;
+	height:44px;
+}
+
+.shadetabs_new li.tab a.selected, .shadetabs_new li.tab a.selected:hover { /*selected main tab style */
+	position: relative;
+	background:url(../images/tab_new_ovr.png) no-repeat top center;
+	width:auto;
+	padding:0px 0px 0px 0px;
+	height:44px;
+	line-height:44px; color: #fff;
+}
+

@@ -1,0 +1,607 @@
+var app = [];
+var xmlservices = {};
+
+var full_sky=[];
+var fly_agents=1;
+
+function unique(arr) {
+var i,
+    len = arr.length,
+    out = [],
+    obj = { };
+
+for (i = 0; i < len; i++) {
+    obj[arr[i]] = 0;
+}
+for (i in obj) {
+    out.push(i);
+}
+return out;
+};
+
+function htmlEncode(value) {
+value=value.replace(/<!--/g, '');
+value=value.replace(/-->/g, '');
+    return $('<div/>').text(value).html();
+}
+
+jQuery(document).ready(function($) {
+
+$('.fare_button').hide();
+	
+$('#car_name_criteria :checkbox').prop('checked', true);
+	$('#category_all').on('click', function(e){
+	$('#car_name_criteria :checkbox').prop('checked', true);
+	var phv=$('#price_filter_hidden').val();
+	var slide_sp = phv.split("-");
+	//$( "#price_slider" ).slider( "values", [slide_sp[0], slide_sp[1]] );
+	$('#price_filter').trigger('change');
+	});
+	$('#category_none').on('click', function(e){
+	$('#car_name_criteria :checkbox').prop('checked', false);
+	var phv=$('#price_filter_hidden').val();
+	var slide_sp = phv.split("-");
+	//$( "#price_slider" ).slider( "values", [slide_sp[0], slide_sp[1]] );
+	$('#price_filter').trigger('change');
+	});
+
+
+
+	$('#stops_criteria :checkbox').prop('checked', true);
+	$('#stops_all').on('click', function(e){
+	$('#stops_criteria :checkbox').prop('checked', $(this).is(':checked'));
+
+	
+
+  });
+
+
+
+app.onwardfl = spoint;
+app.returnfl = epoint;
+
+//console.log(spoint);
+//console.log(epoint);
+	$.ajax({
+    url : "round_flights",
+    type: "POST",
+    data : {req:req},
+    async:true,
+    dataType: 'json',
+    success: function(response)
+    {
+	 
+       var car_name_template = Mustache.compile($.trim($("#car_name_template").html())),
+	$car_name_container = $('#car_name_criteria') ;
+	var stops_template=Mustache.compile($.trim($("#stops_template").html())),
+	$stops_container=$('#stops_criteria') ;
+	var carrier_array = new Array();
+	var stop_array= new Array();
+	var price_array=new Array();
+        var cnt=1;
+	var onwFlights=response.data.onwardflights;
+	//var retFlights =response.data.returnflights;					
+			var outFl = new Array();
+			var retFl = new Array();
+			var allFl = new Array();
+			
+			var inorput = false;
+						
+		for (var f=0; f<onwFlights.length;f++){
+				var flight = new Object();      
+				var fcar_name;
+
+				
+				flight.onwardfl = new Array();
+				flight.returnfl = new Array();			
+				var sour =onwFlights[f].origin;
+				var dest =onwFlights[f].destination;
+				var fnum =onwFlights[f].flightcode;
+				var car_id =onwFlights[f].carrierid;
+				var car_name =onwFlights[f].airline;
+				var car_name =onwFlights[f].airline;
+				var duration=onwFlights[f].splitduration;
+				var arr_tym =onwFlights[f].arrdate;
+				var dst_tym =onwFlights[f].depdate;
+				var stops=onwFlights[f].stops;
+				var img = car_id;
+				var rf=onwFlights[f].warnings;
+
+				
+				 var friend_arr=friend_tym(arr_tym);
+                                 var friend_dst=friend_tym(dst_tym);
+				
+				flight.price=new Array();				
+				var ps = new Object();
+				
+				ps.SingleAdultBaseFare=Math.round(onwFlights[f].fare.adultbasefare);
+				ps.SingleAdultSurcharge=Math.round(onwFlights[f].fare.adultbasefare);
+				ps.SingleAdultTotalTaxes=Math.round(onwFlights[f].fare.adultbasefare);
+				ps.SingleAdultAgentSurcharge=Math.round(onwFlights[f].fare.adultbasefare);
+				ps.SingleAdultTotalAmount=Math.round(onwFlights[f].fare.adulttotalfare);
+				ps.SingleAdultCreditCardCharges=Math.round(onwFlights[f].fare.adultbasefare);
+				ps.SingleAdultCommission=Math.round(onwFlights[f].fare.adultbasefare);
+				ps.SingleAdultServiceTax=Math.round(onwFlights[f].fare.adultbasefare);
+				
+						
+							
+				ps.total_surcharge=(ps.SingleAdultSurcharge);
+				ps.total_tax=(ps.SingleAdultTotalTaxes);
+				ps.cash=(ps.SingleAdultTotalAmount);
+				ps.points=Math.round(ps.cash); 
+		
+
+				flight.price.push(ps);
+				price_array.push(ps.cash);
+
+			        var tempAry = new Array();
+				tempAry.push(sour);
+				tempAry.push(dest);
+				allFl.push(tempAry);
+				carrier_array.push(car_name);
+				var friend_arr=friend_tym(arr_tym);
+				var friend_dst=friend_tym(dst_tym);
+				
+				row_id=cnt;
+			        var tempAry = new Array();
+				
+					var fs = new Object();
+					fs.identify=1;
+					fs.sour = sour.toUpperCase();
+					fs.desti = dest.toUpperCase();
+					fs.car_id=car_id;
+					fs.img=img+'.gif';
+					fs.fnum=fnum;
+					fs.car_name=car_name;
+					fs.duration=duration;
+                  			fs.arr_tym=arr_tym;
+					fs.dst_tym=dst_tym;
+					fs.friend_arr=friend_arr[0];
+					fs.friend_adate=friend_arr[1];
+					fs.friend_dst=friend_dst[0];
+					fs.friend_ddate=friend_dst[1];
+					fs.fnum=fnum;
+					fs.show_price=1;
+					fs.nos=stops;
+					fs.rf= rf;
+					if(onwFlights[f].onwardflights.length==0)
+					{
+					fs.fcnt=1;
+					fs.nonstop=1;
+					
+					}
+					else
+					{
+					fs.fcnt="";
+					fs.nonstop="";
+					
+					}
+
+					if(f==0)
+					fs.cnt=cnt;
+					
+					stop_array.push(fs.nos);
+					flight.onwardfl.push(fs);
+
+				//connection flight goes here
+
+				
+					if(onwFlights[f].onwardflights.length >0)
+				     {
+					
+					var fcar_name;
+					var connection_flight=onwFlights[f].onwardflights.length
+					
+					for(m=0;m<connection_flight;m++)
+					{
+					connection=onwFlights[f].onwardflights;
+					test=connection[m];
+					var sour =test.origin;
+					var dest =test.destination;
+					var fnum =test.flightcode;
+					var car_id =test.carrierid;
+					var car_name =test.airline;
+					var car_name =test.airline;
+					var duration=test.splitduration;
+					var arr_tym =test.arrdate;
+					var dst_tym =test.depdate;
+					var stops=test.stops;
+					var img = car_id;
+
+
+					var fs = new Object();
+					fs.identify=1;
+					fs.sour = sour.toUpperCase();
+					fs.desti = dest.toUpperCase();
+					fs.car_id=car_id;
+					fs.img=img+'.gif';
+					fs.fnum=fnum;
+					fs.car_name=car_name;
+					fs.duration=duration;
+                   			fs.arr_tym=arr_tym;
+					fs.dst_tym=dst_tym;
+					fs.friend_arr=friend_arr[0];
+					fs.friend_adate=friend_arr[1];
+					fs.friend_dst=friend_dst[0];
+					fs.friend_ddate=friend_dst[1];
+					fs.fnum=fnum;
+					fs.show_price=1;
+					if(m==connection_flight-1)
+					{
+					fs.fcnt=1;
+					}
+					else
+					fs.fcnt="";
+					fs.show_price="";
+					flight.row="";
+					
+					flight.onwardfl.push(fs);
+					carrier_array.push(car_name);  
+					
+					
+				}}
+
+
+				if(onwFlights[f].returnfl.length >0)
+				     {
+					
+					var fcar_name;
+					var return_flight=onwFlights[f].returnfl.length
+					for(n=0;n<return_flight;n++)
+					{
+					return_fly=onwFlights[f].returnfl;
+					back=return_fly[n];
+					var sour =back.origin;
+					var dest =back.destination;
+					var fnum =back.flightcode;
+					var car_id =back.carrierid;
+					var car_name =back.airline;
+					var car_name =back.airline;
+					var duration=back.splitduration;
+					var arr_tym =back.arrdate;
+					var dst_tym =back.depdate;
+					var stops=back.stops;
+					var img = car_id;
+					var rf=back.warnings;
+
+					var rs = new Object();
+					rs.identify=1;
+					rs.sour = sour.toUpperCase();
+					rs.desti = dest.toUpperCase();
+					rs.car_id=car_id;
+					rs.img=img+'.gif';
+					fs.fnum=fnum;
+					rs.car_name=car_name;
+					rs.duration=duration;
+                   			rs.arr_tym=arr_tym;
+					rs.dst_tym=dst_tym;
+					rs.friend_arr=friend_arr[0];
+					rs.friend_adate=friend_arr[1];
+					rs.friend_dst=friend_dst[0];
+					rs.friend_ddate=friend_dst[1];
+					rs.fnum=fnum;
+					rs.show_price=1;
+					rs.rf=rf;
+					if(n==return_flight-1)
+					{
+					rs.fcnt=1;
+					}
+					else
+					{
+					rs.fcnt="";
+					fs.show_price="";
+					flight.row="";
+					}
+					
+					flight.returnfl.push(rs);
+					carrier_array.push(car_name);  
+
+					
+
+					
+
+
+
+					
+					if(return_fly[0].onwardflights.length >0)
+				     {
+					
+					var fcar_name;
+					var connection_flight=return_fly[0].onwardflights.length
+					
+					for(m=0;m<connection_flight;m++)
+					{
+					connection=return_fly[0].onwardflights;
+					test=connection[m];
+					var sour =test.origin;
+					var dest =test.destination;
+					var fnum =test.flightcode;
+					var car_id =test.carrierid;
+					var car_name =test.airline;
+					var car_name =test.airline;
+					var duration=test.splitduration;
+					var arr_tym =test.arrdate;
+					var dst_tym =test.depdate;
+					var stops=test.stops;
+					var img = car_id;
+
+
+					var fs = new Object();
+					fs.identify=1;
+					fs.sour = sour.toUpperCase();
+					fs.desti = dest.toUpperCase();
+					fs.car_id=car_id;
+					fs.img=img+'.gif';
+					fs.fnum=fnum;
+					fs.car_name=car_name;
+					fs.duration=duration;
+                   			fs.arr_tym=arr_tym;
+					fs.dst_tym=dst_tym;
+					fs.friend_arr=friend_arr[0];
+					fs.friend_adate=friend_arr[1];
+					fs.friend_dst=friend_dst[0];
+					fs.friend_ddate=friend_dst[1];
+					fs.fnum=fnum;
+					fs.show_price=1;
+					if(m==connection_flight-1)
+					{
+					fs.fcnt=1;
+					}
+					else
+					fs.fcnt="";
+					fs.show_price="";
+					flight.row="";
+					
+					flight.returnfl.push(fs);
+					carrier_array.push(car_name);  
+					
+					
+				}}
+
+
+
+
+
+					
+					
+					
+				}}
+
+					var county= new Object();
+					if(f==0)
+					flight.row=cnt;
+					else
+					flight.row='';
+				   full_sky.push(flight);
+				   carrier_array.push(fcar_name);
+
+       		}
+
+  var rcnt=1;
+
+	//console.log(full_sky);
+	carrier = unique( carrier_array );
+
+	stps=unique(stop_array);
+	//console.log(stps);
+	price_array.sort(function(a,b){return a-b});
+	price_len=price_array.length;
+	min_price=price_array[0];
+	max_price=price_array[price_len-1];
+	//console.log(min_price);
+	//console.log(max_price);
+$("#price_label1" ).html('&#8377 '+min_price );
+$("#price_label2" ).html('&#8377 '+max_price );
+$('#price_filter').val(min_price+'-'+max_price);
+$('#price_filter_hidden').val(min_price+'-'+max_price);
+	$.each(carrier, function(i, g){
+	$car_name_container.append(car_name_template({car_name: g}));
+	
+  });
+	$.each(stps, function(i, j){
+	$stops_container.append(stops_template({nos: j}));
+	
+  });	
+		//var fly_agents =[{"all_flights": { "OnwardPricedItinerary":  full_sky  }}];
+          var fly_agents =full_sky;
+
+//console.log(full_sky);
+
+$('#car_name_criteria :checkbox').prop('checked', true);
+$('#stops_criteria :checkbox').prop('checked', true);
+do_stream(fly_agents,min_price,max_price);
+     },
+ complete: function (response, textStatus, errorThrown)
+    {
+ 	//
+
+    },
+
+    error: function (response, textStatus, errorThrown)
+    {
+ 	app.console('some error encountered');	
+    }
+
+
+
+
+
+});
+
+function find_stops(stops)
+{
+   if(stops==0)
+   {
+     return 'Non Stop'
+
+   }
+   else if(stops==1)
+   {
+        return '1 Stop';
+   }
+   else
+   {
+
+
+       return stops+'Stops';
+
+
+   }
+}
+
+function find_refund(refund)
+{
+   if(refund)
+   {
+
+      return 'Refundable'
+
+   }
+   else
+   {
+
+      return 'Non Refundable';
+
+   }
+   
+
+}
+
+	function calculate_duration(arr,dept)
+	{
+
+      
+		var sdate=split_time(dept);
+		var edate=split_time(arr);
+	       
+		time=moment.duration(edate - sdate);
+		 
+		
+		
+		final_tym=time.hours()+' h '+time.minutes()+' m';
+		
+			
+		return final_tym;
+		
+
+
+
+	}
+	function friend_tym(str)
+	{
+		
+		var splitted = str.split("t");
+		
+		flys_date=splitted[0];
+
+		flys_tym=splitted[1];
+		// Parse it to a moment
+		var m = moment(flys_date+"T"+flys_tym.substring(0,2)+ ':' + flys_tym.substring(2,4));
+
+		// Format it in local time in whatever format you want
+		var s = m.format("YYYY-MM-DD  HH:mm:ss")
+
+		// Or treat it as UTC and then format it
+		var s = m.utc().format("DD-MMM-YYYY")
+	
+	         date_time=Array();
+		 date_time[0]=flys_tym.substring(0,2)+ ':' + flys_tym.substring(2,4);
+		 date_time[1]=s;
+		return date_time;
+
+	}
+
+	function split_time(str)
+	{
+		var splitted = str.split("t");
+		flys_date=splitted[0];
+		flys_tym=splitted[1];
+		var m = moment(flys_date+"T"+flys_tym.substring(0,2)+ ':' + flys_tym.substring(2,4),'YYYY-MM-DD  HH:mm:ss');
+		return m;
+		
+
+	}
+
+	
+
+
+
+
+});
+
+
+function do_stream(getval,min_price,max_price)
+{	
+	var Movies =getval;
+
+$("#price_slider").slider({ 
+    min: min_price,
+    max: max_price,
+    values:[min_price, max_price],
+    step: 2000,
+    range:true,
+    slide: function( event, ui ) {
+
+      $("#price_label1" ).html('&#8377 '+ui.values[ 0 ] ); 
+      $("#price_label2" ).html('&#8377 '+ui.values[ 1 ]);
+      $('#price_filter').val(ui.values[0] + '-' + ui.values[1]).trigger('change');
+    }
+  });
+
+$.each(Movies, function(i, m){ m.id = i+1; });
+
+$('#hidden_movie').val(Movies);
+window.mf = MovieFilter(Movies);
+}
+
+var MovieFilter = function(services){
+  var template = Mustache.compile($.trim($("#template").html()));
+  var view = function(movies){
+
+	   
+    return template(movies);
+  };
+
+  
+  
+  var callbacks = {
+    after_filter: function(result){
+      $('#total_movies').text(result.length+' Flights available');
+    },
+    before_add: function(services){
+     $('#total_movies').text(services.length+' Flights available');
+    },
+    after_add: function(services){
+    $('#total_movies').text(services.length+' Flights available');
+    var cnt_fly=services.length;
+    	if(cnt_fly==0)
+    	{
+$('#total_movies').text('No Results Found');
+$('#result').html('<div id="result" align="center"><div style="padding-top:120px;"><section class="retrive_password"><h3>No Results Found</h3><div class="retrive_password_content"><img style="padding-right: 57px;"</div></section></div></div> </div>');
+$('.price_pad').hide();
+$('.airlines').hide();
+
+     	}
+    }
+  };
+
+  options = {
+    filter_criteria: {
+    price_filter:  ['#price_filter .TYPE.range', 'price.ARRAY.cash'],
+   car_name: ['#car_name_criteria input:checkbox .EVENT.click .SELECT.:checked', 'onwardfl.ARRAY.car_name'],
+   nos: ['#stops_criteria input:checkbox .EVENT.click .SELECT.:checked', 'onwardfl.ARRAY.nos']
+
+
+    },
+    and_filter_on: true,
+    callbacks: callbacks,
+    search: {input: '#searchbox'}
+    
+  }
+$('#result').html('');
+
+return FilterJS(services, "#movies", view, options);
+
+
+}
+

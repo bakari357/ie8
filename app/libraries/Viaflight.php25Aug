@@ -1,0 +1,2104 @@
+<?php
+class Viaflight {
+
+	
+	public static function getflight($param) {
+		$action='AirFareSearchRequest';
+		$authkey = '&source=REWARDS360&auth=29360RE0WARDS';
+		$xmlRequest="<AirFareSearchRequest>
+				<Route>
+				<Source>".$param[0]."</Source>
+				<Destination>".$param[1]."</Destination>
+				<DateOfDeparture>".$param[2]."</DateOfDeparture>";
+		if($param[7]=='R'){
+		$xmlRequest.="<DateOfArrival>".$param[8]."</DateOfArrival>	
+		              <DiscountedReturnFareSearch>".$param[9]."</DiscountedReturnFareSearch>";		
+		}		
+		$xmlRequest.="</Route>
+				<PassengerCount>
+				<Adults>".(int)$param[3]."</Adults>
+				<Children>".(int)$param[4]."</Children>
+				<Infants>".(int)$param[5]."</Infants>
+				</PassengerCount>
+				<CabinPreference>
+				<SeatingClass>".$param[6]."</SeatingClass>
+				</CabinPreference>
+				</AirFareSearchRequest>";
+		$get_flights= 'http://api.viaworld.in/webserviceAPI?actionId='.$action.'&xmlRequest='.urlencode($xmlRequest).'&'.$authkey;
+		$flightlist= Hungama::doMessage($get_flights); 
+		return $flightlist;
+	}
+
+
+	public static function airprice_details($firstflight,$secondflight='',$post,$start="",$dest="") {
+                   
+		$p=unserialize(str_replace('quot','"',$post));
+			
+                if($p['type']=='R' && $p['discouted']=='on')
+		{
+		$airpricerequestxml='<AirPriceRequest>
+					<RequestId></RequestId>
+					<Mobile></Mobile>
+					<Itinerary>';
+		$airpricerequestxml .='<OnwardFlights>';
+		$ex=(str_replace('quot','"',$firstflight));
+		$FirstFlight=unserialize($ex);
+		$response=Viaflight::split_flights($FirstFlight['Flights']['Flight'],$p['leavingfrom'],$p['goingto']);
+		foreach($response['onward'] as $onward=>$flights)
+		{
+		   if(!empty($flights['Source']))
+		     {		
+		       if(empty($flights['Class']))
+		          {
+		$flights['Class']='-';
+		}
+		$airpricerequestxml .='<Flight>
+					<CarrierId>'.$flights['Carrier_attr']['id'].'</CarrierId>
+					<FlightNumber>'.$flights['FlightNumber'].'</FlightNumber>
+					<Source>'.$flights['Source'].'</Source>
+					<Destination>'.$flights['Destination'].'</Destination>
+					<DepartureTimeStamp>'.$flights['DepartureTimeStamp'].'</DepartureTimeStamp>
+					<ArrivalTimeStamp>'.$flights['ArrivalTimeStamp'].'</ArrivalTimeStamp>
+					<Class>'.$flights['Class'].'</Class>
+					<FareBasis>'.$flights['FareBasis'].'</FareBasis>
+					</Flight>';
+		}
+		}
+		$airpricerequestxml .='</OnwardFlights>';
+               
+		$airpricerequestxml .='<ReturnFlights>';
+		foreach($response['return'] as $return=>$flights)
+		{
+		$airpricerequestxml .='<Flight>
+					<CarrierId>'.$flights['Carrier_attr']['id'].'</CarrierId>
+					<FlightNumber>'.$flights['FlightNumber'].'</FlightNumber>
+					<Source>'.$flights['Source'].'</Source>
+					<Destination>'.$flights['Destination'].'</Destination>
+					<DepartureTimeStamp>'.$flights['DepartureTimeStamp'].'</DepartureTimeStamp>
+					<ArrivalTimeStamp>'.$flights['ArrivalTimeStamp'].'</ArrivalTimeStamp>
+					<Class>'.$flights['Class'].'</Class>
+					<FareBasis>'.$flights['FareBasis'].'</FareBasis>
+					</Flight>';
+		}
+		$airpricerequestxml .='</ReturnFlights>';
+		$airpricerequestxml .='</Itinerary>';
+		$airpricerequestxml .='<PassengerCount>
+					<Adults>'.(int)$p['adults'].'</Adults>
+					<Children>'.(int)$p['children'].'</Children>
+					<Infants>'.(int)$p['infants'].'</Infants>
+					</PassengerCount>';
+		$airpricerequestxml .='</AirPriceRequest>';
+
+		}
+
+		else{
+		$airpricerequestxml='<AirPriceRequest>
+					<RequestId></RequestId>
+					<Mobile></Mobile>';
+		if($p['plantype']=='intFlight' && $p['type']=='R')
+		{
+		$airpricerequestxml.='<Itinerary isReturn="true" isIntl="true" dest="'.$dest.'">';
+		}
+		elseif($p['plantype']=='intFlight' && $p['type']=='O')
+		{
+		$airpricerequestxml.='<Itinerary>';
+		}
+		else
+		{
+		$airpricerequestxml.='<Itinerary>';
+		}
+
+		if(isset($firstflight) && $firstflight<>'')
+		{
+		$airpricerequestxml .='<OnwardFlights>';
+		$ex=(str_replace('quot','"',$firstflight));
+		$FirstFlight=unserialize($ex);
+		if(array_key_exists(0,$FirstFlight['Flights']['Flight']))
+		{
+		foreach($FirstFlight['Flights']['Flight'] as $flights){
+		if(!empty($flights['Source']))
+		{		
+		if(empty($flights['Class']))
+		{
+		$flights['Class']='-';
+		}
+		$airpricerequestxml .='<Flight>
+					<CarrierId>'.$flights['Carrier_attr']['id'].'</CarrierId>
+					<FlightNumber>'.$flights['FlightNumber'].'</FlightNumber>
+					<Source>'.$flights['Source'].'</Source>
+					<Destination>'.$flights['Destination'].'</Destination>
+					<DepartureTimeStamp>'.$flights['DepartureTimeStamp'].'</DepartureTimeStamp>
+					<ArrivalTimeStamp>'.$flights['ArrivalTimeStamp'].'</ArrivalTimeStamp>
+					<Class>'.$flights['Class'].'</Class>
+					<FareBasis>'.$flights['FareBasis'].'</FareBasis>
+					</Flight>';
+		}
+		}
+		}
+		else
+		{
+		if(empty($FirstFlight['Flights']['Flight']['Class']))
+		{
+		$FirstFlight['Flights']['Flight']['Class']='-';
+		}
+		$airpricerequestxml .='<Flight>
+					<CarrierId>'.$FirstFlight['Flights']['Flight']['Carrier_attr']['id'].'</CarrierId>
+					<FlightNumber>'.$FirstFlight['Flights']['Flight']['FlightNumber'].'</FlightNumber>
+					<Source>'.$FirstFlight['Flights']['Flight']['Source'].'</Source>
+					<Destination>'.$FirstFlight['Flights']['Flight']['Destination'].'</Destination>
+					<DepartureTimeStamp>'.$FirstFlight['Flights']['Flight']['DepartureTimeStamp'].'</DepartureTimeStamp>
+					<ArrivalTimeStamp>'.$FirstFlight['Flights']['Flight']['ArrivalTimeStamp'].'</ArrivalTimeStamp>
+					<Class>'.$FirstFlight['Flights']['Flight']['Class'].'</Class>
+					<FareBasis>'.$FirstFlight['Flights']['Flight']['FareBasis'].'</FareBasis>
+					</Flight>';
+		}
+		$airpricerequestxml .='</OnwardFlights>';
+		}
+		if(isset($secondflight) && $secondflight<>'')
+		{
+		$airpricerequestxml .='<ReturnFlights>';
+		$sx=(str_replace('quot','"',$secondflight));
+		$SecondFlight=unserialize($sx);
+		if(array_key_exists(0,$SecondFlight['Flights']['Flight']))
+		{
+		foreach($SecondFlight['Flights']['Flight'] as $sflights){
+		$airpricerequestxml .='<Flight>
+					<CarrierId>'.$sflights['Carrier_attr']['id'].'</CarrierId>
+					<FlightNumber>'.$sflights['FlightNumber'].'</FlightNumber>
+					<Source>'.$sflights['Source'].'</Source>
+					<Destination>'.$sflights['Destination'].'</Destination>
+					<DepartureTimeStamp>'.$sflights['DepartureTimeStamp'].'</DepartureTimeStamp>
+					<ArrivalTimeStamp>'.$sflights['ArrivalTimeStamp'].'</ArrivalTimeStamp>
+					<Class>'.$sflights['Class'].'</Class>
+					<FareBasis>'.$sflights['FareBasis'].'</FareBasis>
+					</Flight>';
+		}				
+		}
+		else
+		{
+		$airpricerequestxml .='<Flight>
+					<CarrierId>'.$SecondFlight['Flights']['Flight']['Carrier_attr']['id'].'</CarrierId>
+					<FlightNumber>'.$SecondFlight['Flights']['Flight']['FlightNumber'].'</FlightNumber>
+					<Source>'.$SecondFlight['Flights']['Flight']['Source'].'</Source>
+					<Destination>'.$SecondFlight['Flights']['Flight']['Destination'].'</Destination>
+					<DepartureTimeStamp>'.$SecondFlight['Flights']['Flight']['DepartureTimeStamp'].'</DepartureTimeStamp>
+					<ArrivalTimeStamp>'.$SecondFlight['Flights']['Flight']['ArrivalTimeStamp'].'</ArrivalTimeStamp>
+					<Class>'.$SecondFlight['Flights']['Flight']['Class'].'</Class>
+					<FareBasis>'.$SecondFlight['Flights']['Flight']['FareBasis'].'</FareBasis>
+					</Flight>';
+		}
+		$airpricerequestxml .='</ReturnFlights>';
+		}
+		$airpricerequestxml .='</Itinerary>';
+		$po=str_replace('quot','"',$post);
+		$postvalue=unserialize($po);
+		$airpricerequestxml .='<PassengerCount>
+					<Adults>'.(int)$postvalue['adults'].'</Adults>
+					<Children>'.(int)$postvalue['children'].'</Children>
+					<Infants>'.(int)$postvalue['infants'].'</Infants>
+					</PassengerCount>';
+		$airpricerequestxml .='</AirPriceRequest>';
+		}
+
+                 
+
+		$action='AirPriceRequest';
+		$authkey = '&source=REWARDS360&auth=29360RE0WARDS';
+		$airpricerequest = 'http://api.viaworld.in/webserviceAPI?actionId='.$action.'&xmlRequest='.urlencode($airpricerequestxml).'&'.$authkey; 
+		//print_r($airpricerequest); exit;
+		$price= Hungama::doMessage($airpricerequest); 
+         //echo '<pre>'; print_r($price); exit; 
+		return $price;
+	}
+
+
+
+	public static function int_airprice_details($firstflight,$secondflight='',$post,$start="",$dest="") 
+	{
+	$p=unserialize(str_replace('quot','"',$post));
+
+	$airpricerequestxml='<AirPriceRequest>
+				<RequestId></RequestId>
+				<Mobile></Mobile>';
+	if($p['plantype']=='intFlight' && $p['type']=='R')
+	{
+	$airpricerequestxml.='<Itinerary isReturn="true" isIntl="true" dest="'.$dest.'">';
+	}
+	elseif($p['plantype']=='intFlight' && $p['type']=='O')
+	{
+	$airpricerequestxml.='<Itinerary>';
+	}
+	else
+	{
+	$airpricerequestxml.='<Itinerary>';
+	}
+	if(isset($firstflight) && $firstflight<>'')
+	{
+	$airpricerequestxml .='<OnwardFlights>';
+	$ex=(str_replace('quot','"',$firstflight));
+	$FirstFlight=unserialize($ex);
+	if(array_key_exists(0,$FirstFlight['Flights']['Flight']))
+	{
+	foreach($FirstFlight['Flights']['Flight'] as $flights){
+	if(!empty($flights['Source']))
+	{		
+	if(empty($flights['Class']))
+	{
+	$flights['Class']='-';
+	}
+	$airpricerequestxml .='<Flight>
+				<CarrierId>'.$flights['Carrier_attr']['id'].'</CarrierId>
+				<FlightNumber>'.$flights['FlightNumber'].'</FlightNumber>
+				<Source>'.$flights['Source'].'</Source>
+				<Destination>'.$flights['Destination'].'</Destination>
+				<DepartureTimeStamp>'.$flights['DepartureTimeStamp'].'</DepartureTimeStamp>
+				<ArrivalTimeStamp>'.$flights['ArrivalTimeStamp'].'</ArrivalTimeStamp>
+				<Class>'.$flights['Class'].'</Class>
+				<FareBasis>'.$flights['FareBasis'].'</FareBasis>
+				</Flight>';
+	}
+	}
+	}
+	else
+	{
+	if(empty($FirstFlight['Flights']['Flight']['Class']))
+	{
+	$FirstFlight['Flights']['Flight']['Class']='-';
+	}
+	$airpricerequestxml .='<Flight>
+				<CarrierId>'.$FirstFlight['Flights']['Flight']['Carrier_attr']['id'].'</CarrierId>
+				<FlightNumber>'.$FirstFlight['Flights']['Flight']['FlightNumber'].'</FlightNumber>
+				<Source>'.$FirstFlight['Flights']['Flight']['Source'].'</Source>
+				<Destination>'.$FirstFlight['Flights']['Flight']['Destination'].'</Destination>
+				<DepartureTimeStamp>'.$FirstFlight['Flights']['Flight']['DepartureTimeStamp'].'</DepartureTimeStamp>
+				<ArrivalTimeStamp>'.$FirstFlight['Flights']['Flight']['ArrivalTimeStamp'].'</ArrivalTimeStamp>
+				<Class>'.$FirstFlight['Flights']['Flight']['Class'].'</Class>
+				<FareBasis>'.$FirstFlight['Flights']['Flight']['FareBasis'].'</FareBasis>
+				</Flight>';
+	}
+	$airpricerequestxml .='</OnwardFlights>';
+	}
+	if(isset($secondflight) && $secondflight<>'')
+	{
+	$airpricerequestxml .='<ReturnFlights>';
+	$sx=(str_replace('quot','"',$secondflight));
+	$SecondFlight=unserialize($sx);
+	if(array_key_exists(0,$SecondFlight['Flights']['Flight']))
+	{
+	foreach($SecondFlight['Flights']['Flight'] as $sflights){
+	$airpricerequestxml .='<Flight>
+				<CarrierId>'.$sflights['Carrier_attr']['id'].'</CarrierId>
+				<FlightNumber>'.$sflights['FlightNumber'].'</FlightNumber>
+				<Source>'.$sflights['Source'].'</Source>
+				<Destination>'.$sflights['Destination'].'</Destination>
+				<DepartureTimeStamp>'.$sflights['DepartureTimeStamp'].'</DepartureTimeStamp>
+				<ArrivalTimeStamp>'.$sflights['ArrivalTimeStamp'].'</ArrivalTimeStamp>
+				<Class>'.$sflights['Class'].'</Class>
+				<FareBasis>'.$sflights['FareBasis'].'</FareBasis>
+				</Flight>';
+	}				
+	}
+	else
+	{
+	$airpricerequestxml .='<Flight>
+				<CarrierId>'.$SecondFlight['Flights']['Flight']['Carrier_attr']['id'].'</CarrierId>
+				<FlightNumber>'.$SecondFlight['Flights']['Flight']['FlightNumber'].'</FlightNumber>
+				<Source>'.$SecondFlight['Flights']['Flight']['Source'].'</Source>
+				<Destination>'.$SecondFlight['Flights']['Flight']['Destination'].'</Destination>
+				<DepartureTimeStamp>'.$SecondFlight['Flights']['Flight']['DepartureTimeStamp'].'</DepartureTimeStamp>
+				<ArrivalTimeStamp>'.$SecondFlight['Flights']['Flight']['ArrivalTimeStamp'].'</ArrivalTimeStamp>
+				<Class>'.$SecondFlight['Flights']['Flight']['Class'].'</Class>
+				<FareBasis>'.$SecondFlight['Flights']['Flight']['FareBasis'].'</FareBasis>
+				</Flight>';
+	}
+	$airpricerequestxml .='</ReturnFlights>';
+	}
+
+	//print_r($airpricerequestxml); exit;
+	$airpricerequestxml .='</Itinerary>';
+	$po=str_replace('quot','"',$post);
+	$postvalue=unserialize($po);
+	$airpricerequestxml .='<PassengerCount>
+				<Adults>'.(int)$postvalue['adults'].'</Adults>
+				<Children>'.(int)$postvalue['children'].'</Children>
+				<Infants>'.(int)$postvalue['infants'].'</Infants>
+				</PassengerCount>';
+	$airpricerequestxml .='</AirPriceRequest>';
+	$action='AirPriceRequest';
+	$authkey = '&source=REWARDS360&auth=29360RE0WARDS';
+	$int_airpricerequest = 'http://api.viaworld.in/webserviceAPI?actionId='.$action.'&xmlRequest='.urlencode($airpricerequestxml).'&'.$authkey; 
+	$int_price= Hungama::doMessage($int_airpricerequest);  	print_r($int_price); exit;
+	return $int_price;
+	}
+
+
+
+	public static function via_booking($api,$customer,$id) 
+        {
+	$persondetails=Viaflight::toArray(json_decode($customer));
+	if(isset($api) && !empty($api))
+	{
+	$OnwardFlights=$api;
+	$flight_res=$OnwardFlights['AirPriceResponse']['PricedItinerary']['OnwardFlights']['Flight'];
+	$OnwardFlightsxml="<OnwardFlights>";
+	if(array_key_exists(0,$flight_res))
+	{
+	foreach($flight_res as $FlightSegment) 
+	{
+	if(!empty($FlightSegment['Carrier_attr']['id']))
+	{				
+	$OnwardFlightsxml .="<Flight>
+				<CarrierId>".$FlightSegment['Carrier_attr']['id']."</CarrierId>
+				<FlightNumber>".$FlightSegment['FlightNumber']."</FlightNumber>
+				<Source>".$FlightSegment['Source']."</Source>
+				<Destination>".$FlightSegment['Destination']."</Destination>
+				<DepartureTimeStamp>".$FlightSegment['DepartureTimeStamp']."</DepartureTimeStamp>
+				<ArrivalTimeStamp>".$FlightSegment['ArrivalTimeStamp']."</ArrivalTimeStamp>
+				<Class>".$FlightSegment['Class']."</Class>
+				<FareBasis>".$FlightSegment['FareBasis']."</FareBasis>
+				</Flight>";
+	}
+	}			
+	}
+	else
+	{			
+        $OnwardFlightsxml .="<Flight>
+				<CarrierId>".$flight_res['Carrier_attr']['id']."</CarrierId>
+				<FlightNumber>".$flight_res['FlightNumber']."</FlightNumber>
+				<Source>".$flight_res['Source']."</Source>
+				<Destination>".$flight_res['Destination']."</Destination>
+				<DepartureTimeStamp>".$flight_res['DepartureTimeStamp']."</DepartureTimeStamp>
+				<ArrivalTimeStamp>".$flight_res['ArrivalTimeStamp']."</ArrivalTimeStamp>
+				<Class>".$flight_res['Class']."</Class>
+				<FareBasis>".$flight_res['FareBasis']."</FareBasis>
+				</Flight>";
+	}			
+	$OnwardFlightsxml .="</OnwardFlights>";
+	}
+	else
+	{
+	$OnwardFlightsxml='';
+	}
+
+	//return flight	
+	if(isset($api) && !empty($api))
+	{
+	$ReturnFlights=$api;
+	if(isset($OnwardFlights['AirPriceResponse']['PricedItinerary']['ReturnFlights']) && !empty($OnwardFlights['AirPriceResponse']['PricedItinerary']['ReturnFlights'])) {
+	$flight_res1=$OnwardFlights['AirPriceResponse']['PricedItinerary']['ReturnFlights']['Flight'];
+	$ReturnFlightsxml="<ReturnFlights>";
+	if(array_key_exists(0,$flight_res1))
+	{
+	foreach($flight_res1 as $ReturnFlightSegment) 
+	{
+	$ReturnFlightsxml .="<Flight>
+				<CarrierId>".$ReturnFlightSegment['Carrier_attr']['id']."</CarrierId>
+				<FlightNumber>".$ReturnFlightSegment['FlightNumber']."</FlightNumber>
+				<Source>".$ReturnFlightSegment['Source']."</Source>
+				<Destination>".$ReturnFlightSegment['Destination']."</Destination>
+				<DepartureTimeStamp>".$ReturnFlightSegment['DepartureTimeStamp']."</DepartureTimeStamp>
+				<ArrivalTimeStamp>".$ReturnFlightSegment['ArrivalTimeStamp']."</ArrivalTimeStamp>
+				<Class>".$ReturnFlightSegment['Class']."</Class>
+				<FareBasis>".$ReturnFlightSegment['FareBasis']."</FareBasis>
+				</Flight>";
+	}			
+	}			
+	else
+	{
+	$ReturnFlightsxml .="<Flight>
+				<CarrierId>".$flight_res1['Carrier_attr']['id']."</CarrierId>
+				<FlightNumber>".$flight_res1['FlightNumber']."</FlightNumber>
+				<Source>".$flight_res1['Source']."</Source>
+				<Destination>".$flight_res1['Destination']."</Destination>
+				<DepartureTimeStamp>".$flight_res1['DepartureTimeStamp']."</DepartureTimeStamp>
+				<ArrivalTimeStamp>".$flight_res1['ArrivalTimeStamp']."</ArrivalTimeStamp>
+				<Class>".$flight_res1['Class']."</Class>
+				<FareBasis>".$flight_res1['FareBasis']."</FareBasis>
+				</Flight>";
+	}
+	$ReturnFlightsxml .="</ReturnFlights>";
+	}
+
+	else
+	{
+	$ReturnFlightsxml="";
+	}}
+
+	$Passenger='';
+	if($persondetails['post']['adults']>0){
+	for($i=1;$i<=$persondetails['post']['adults'];$i++)
+	{		
+	$Passenger .="<Passenger><Type>A</Type>
+			<Title>".$persondetails['adult'.$i.'title']."</Title>
+			<FirstName>".$persondetails['adult'.$i.'fname']."</FirstName>
+			<LastName>".$persondetails['adult'.$i.'lname']."</LastName>
+			<ffnumber id=\"9W\">abcdef</ffnumber>";
+	if(isset($persondetails['adult'.$i.'passport']))
+	{
+	$Passenger .="<identificationdetail type=\"1\">
+			<number>".$persondetails['adult'.$i.'passport']."</number>
+			</identificationdetail>";
+	}
+	$Passenger .="</Passenger>";
+	}
+	}
+	if($persondetails['post']['children']>0){
+	for($j=1;$j<=$persondetails['post']['children'];$j++)
+	{		
+	$Passenger .="<Passenger><Type>C</Type>
+			<Title>".$persondetails['child'.$j.'title']."</Title>
+			<FirstName>".$persondetails['child'.$j.'fname']."</FirstName>
+			<LastName>".$persondetails['child'.$j.'lname']."</LastName>
+			<Age>".agecalculate($persondetails['child'.$j.'dob'])."</Age>"; 
+	if(isset($persondetails['child'.$i.'passport']))
+	{
+	$Passenger .="<identificationdetail type=\"1\">
+			<number>".$persondetails['child'.$i.'passport']."</number>
+			</identificationdetail>";
+	}
+	$Passenger .="</Passenger>";
+	}
+	}
+	if($persondetails['post']['infants']>0){
+	for($k=1;$k<=$persondetails['post']['infants'];$k++)
+	{
+	$Passenger .="<Passenger><Type>I</Type>
+			<Title>".$persondetails['infant'.$k.'title']."</Title>
+			<FirstName>".$persondetails['infant'.$k.'fname']."</FirstName>
+			<LastName>".$persondetails['infant'.$k.'lname']."</LastName>
+			<Age>".agecalculate($persondetails['infant'.$k.'dob'])."</Age>";
+	if(isset($persondetails['infants'.$i.'passport']))
+	{
+	$Passenger .="<identificationdetail type=\"1\">
+			<number>".$persondetails['infants'.$i.'passport']."</number>
+			</identificationdetail>";
+	}
+	$Passenger .="</Passenger>";
+	}
+	}
+	$action='AirBookingRequest';
+	$authkey = '&source=REWARDS360&auth=29360RE0WARDS';
+
+	$xmlRequest="<AirBookingRequest>
+			<RequestID>".$id.date('YmdHis')."</RequestID>
+			<Mobile>".$persondetails['contactPhone']."</Mobile>
+			<Email>".$persondetails['contactEmail']."</Email>
+			<BookingRequestId>".$id."</BookingRequestId>
+			<Itinerary>
+	".$OnwardFlightsxml."
+	".$ReturnFlightsxml."
+			</Itinerary>
+			<Passengers>
+	".$Passenger."
+			</Passengers>
+			<DeliveryInformation>
+			<Street>".$persondetails['addrStreet']."</Street>
+			<City>".$persondetails['addrCity']."</City>
+			<Pincode>".$persondetails['addrPincode']."</Pincode>
+			<Phone>".$persondetails['contactLandline']."</Phone>
+			</DeliveryInformation>
+			<PaymentInformation>
+			<PaymentType>2</PaymentType>
+			</PaymentInformation>
+			</AirBookingRequest>";
+	$booking = 'http://www.test.viaworld.in/webserviceAPI?actionId='.$action.'&xmlRequest='.urlencode($xmlRequest).'&'.$authkey;             
+	$flightbook= Hungama::doMessage($booking); 
+	return $flightbook;
+	}
+
+
+
+	public static function airresponse($flights) 
+        { 
+	$authkey = '&source=REWARDS360&auth=29360RE0WARDS';
+	$pnraction='AirBookingStatusRequest';
+	$pnrxml='<AirBookingStatusRequest>
+	<RequestID>'.$flights['AirBookingResponse']['RequestId'].'</RequestID>
+	<BookingID>'.$flights['AirBookingResponse']['BookingId'].'</BookingID>
+	</AirBookingStatusRequest>';
+	$booking_res = 'http://www.test.viaworld.in/webserviceAPI?actionId='.$pnraction.'&xmlRequest='.urlencode($pnrxml).'&'.$authkey;  
+	$response= Hungama::doMessage($booking_res); 
+	return $response;
+	}
+        
+
+        public static function toArray($obj)
+	{
+	    if(is_object($obj)) $obj = (array) $obj;
+		if(is_array($obj)) {
+		$new = array();
+	    foreach($obj as $key => $val) {
+		$new[$key] = Viaflight::toArray($val);
+	}
+	}
+	  else {
+	        $new = $obj;
+	       }
+	 return $new;
+	}
+
+
+        public static function split_flights($array,$src,$dst,$intl="")
+	{
+	
+	
+  		unset($array['0_attr']);
+		
+
+	        $cnt=1;
+	        foreach($array as $arr=>$arow)
+	        {
+	      
+	       if(isset($arow['Carrier'])&&!empty($arow['Carrier']))
+	         $onward[]=$arow;
+		
+		
+	          //get the onward flights
+	          if(isset($arow['Destination']) && $arow['Destination']==$dst)
+	          {
+	             break;
+	          }
+	         $cnt= $cnt+1;
+	       }
+	             
+	       $output = array_slice($array,$cnt); 
+	       unset($output['0_attr']);
+	       $return=$output;
+	      	
+	      		
+	          $fly['onward']= array_filter($onward);
+	         $fly['return']=array_filter($return);
+	          
+	          // get the destination flghts
+		//echo '<pre>';	 	
+		//print_r($fly);  exit; 
+	      return array_filter($fly);
+		
+	}
+	//cleartrip flights
+	public static function cleartrip_booking($api,$customer,$id) 
+        {
+            
+        $itinerary_id=trim($api['Posted']['itinerary_id']);
+        
+        $xmlRequest='<booking xmlns="http://www.cleartrip.com/air/">
+        <contact-detail>
+        <title>Mr</title>
+        <first-name>'.$api['Posted']['first_name'].'</first-name>
+        <last-name>'.$api['Posted']['last_name'].'</last-name>
+        <email>sivashanker.g@mahiti.org</email>
+        <address>Unit No 001, Ground Floor, DTC Bldg, Sitaram mills
+        compound, N.M.joshi Marg, Lower parel (E)</address>
+        <mobile>'.$api['Posted']['mobile'].'</mobile>
+        <landline>02240554000</landline>
+        <city-name>Mumbai</city-name>
+        <state-name>Maharashtra</state-name>
+        <country-name>India</country-name>
+        <pin-code>400011</pin-code>
+        </contact-detail>
+        <payment-detail>
+        <payment-type>DA</payment-type>
+        <deposit-account-id>225464742</deposit-account-id>
+        </payment-detail>
+        </booking>';
+       // echo "<pre>";print_r(htmlspecialchars($xmlRequest));
+        //exit;
+ //<email>'.$api['Posted']['s_email'].'</email>
+        $authkey='5caebd280ccdf3463b025eca00fa5e78';
+        //$itenaryid="683d692483-7a0f-4eb5-a183-c5250f4da951";
+        $url="http://api.staging.cleartrip.com/air/1.0/itinerary/book/".$itinerary_id;
+        //$url = 'http://api.staging.cleartrip.com/air/1.0/itinerary/create?xmlRequest='.$xmlRequest;
+
+
+        //echo "<pre>";print_r($url);exit; 
+        // create curl resource 
+
+
+        
+
+
+        $ch = curl_init(); 
+        curl_setopt($ch, CURLOPT_URL,$url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array('X-CT-API-KEY: 5caebd280ccdf3463b025eca00fa5e78','X-CT-SOURCETYPE:API','Content-Type: application/xml'));
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, trim($xmlRequest));
+
+
+
+        $data = curl_exec($ch); 
+        //echo '<pre>'; print_r((htmlspecialchars($data)));exit;
+        if(curl_errno($ch))
+        print curl_error($ch);
+        else
+        curl_close($ch);
+       
+        return $data;
+       /*return '
+<book-response xmlns="http://www.cleartrip.com/air/">
+<trip-id>Q1407230400</trip-id>
+<created-at>2014-07-23T18:40:56</created-at>
+<pricing-summary>
+<base-fare>11567.0</base-fare>
+<discount>0.0</discount>
+<markup>0.0</markup>
+<taxes>2593.4802</taxes>
+<cashback>0.0</cashback>
+<total-fare>14160.0</total-fare>
+</pricing-summary>
+<flights>
+<flight>
+<segments>
+<segment>
+<index>1</index>
+<departure-airport>DEL</departure-airport>
+<arrival-airport>BOM</arrival-airport>
+<departure-date-time>2014-07-25T05:35:00</departure-date-time>
+<arrival-date-time>2014-07-25T07:40:00</arrival-date-time>
+<airline>SG</airline>
+<flight-number>131</flight-number>
+<operating-airline>SG</operating-airline>
+<stops>0</stops>
+<equipment/>
+<duration>7500</duration>
+</segment>
+</segments>
+</flight>
+<flight>
+<segments>
+<segment>
+<index>2</index>
+<departure-airport>BOM</departure-airport>
+<arrival-airport>DEL</arrival-airport>
+<departure-date-time>2014-07-31T05:55:00</departure-date-time>
+<arrival-date-time>2014-07-31T08:10:00</arrival-date-time>
+<airline>SG</airline>
+<flight-number>851</flight-number>
+<operating-airline>SG</operating-airline>
+<stops>0</stops>
+<equipment/>
+<duration>8100</duration>
+</segment>
+</segments>
+</flight>
+</flights>
+<pax-pricing-info-list>
+<pax-pricing-info>
+<pax-info-index>1</pax-info-index>
+<pricing-info-list>
+<pricing-info>
+<index>1</index>
+<fare-basis-code>KRT</fare-basis-code>
+<pricing-elements>
+<pricing-element>
+<amount>6212.0</amount>
+<category>BF</category>
+<code/>
+</pricing-element>
+<pricing-element>
+<amount>50.0</amount>
+<category>TAX</category>
+<code>CUTE</code>
+</pricing-element>
+<pricing-element>
+<amount>146.0</amount>
+<category>TAX</category>
+<code>PSF</code>
+</pricing-element>
+<pricing-element>
+<amount>664.0</amount>
+<category>TAX</category>
+<code>UDF</code>
+</pricing-element>
+<pricing-element>
+<amount>310.0</amount>
+<category>TAX</category>
+<code>AIRLINE-MSC</code>
+</pricing-element>
+<pricing-element>
+<amount>0.0</amount>
+<category>TAX</category>
+<code>YQ</code>
+</pricing-element>
+<pricing-element>
+<amount>0.0</amount>
+<category>TAX</category>
+<code>YR</code>
+</pricing-element>
+<pricing-element>
+<amount>0.0</amount>
+<category>TAX</category>
+<code>OCT</code>
+</pricing-element>
+<pricing-element>
+<amount>38.39</amount>
+<category>TAX</category>
+<code>CLEARTRIP-SVC</code>
+</pricing-element>
+</pricing-elements>
+</pricing-info>
+<pricing-info>
+<index>2</index>
+<fare-basis-code>JRT</fare-basis-code>
+<pricing-elements>
+<pricing-element>
+<amount>5355.0</amount>
+<category>BF</category>
+<code/>
+</pricing-element>
+<pricing-element>
+<amount>50.0</amount>
+<category>TAX</category>
+<code>CUTE</code>
+</pricing-element>
+<pricing-element>
+<amount>734.0</amount>
+<category>TAX</category>
+<code>AIRLINE-MSC</code>
+</pricing-element>
+<pricing-element>
+<amount>147.0</amount>
+<category>TAX</category>
+<code>PSF</code>
+</pricing-element>
+<pricing-element>
+<amount>421.0</amount>
+<category>TAX</category>
+<code>UDF</code>
+</pricing-element>
+<pricing-element>
+<amount>0.0</amount>
+<category>TAX</category>
+<code>YQ</code>
+</pricing-element>
+<pricing-element>
+<amount>0.0</amount>
+<category>TAX</category>
+<code>YR</code>
+</pricing-element>
+<pricing-element>
+<amount>0.0</amount>
+<category>TAX</category>
+<code>OCT</code>
+</pricing-element>
+<pricing-element>
+<amount>33.09</amount>
+<category>TAX</category>
+<code>CLEARTRIP-SVC</code>
+</pricing-element>
+</pricing-elements>
+</pricing-info>
+</pricing-info-list>
+<booking-info-list>
+<booking-info>
+<index>1</index>
+<segment-index>1</segment-index>
+<pricing-info-index>1</pricing-info-index>
+<booking-class>K</booking-class>
+<cabin-type>ECONOMY</cabin-type>
+<ticket-type>ECONOMY</ticket-type>
+<booking-status>P</booking-status>
+<airline-pnr>X5W4XC</airline-pnr>
+<gds-pnr/>
+<ticket-number>X5W4XC</ticket-number>
+</booking-info>
+<booking-info>
+<index>2</index>
+<segment-index>2</segment-index>
+<pricing-info-index>2</pricing-info-index>
+<booking-class>J</booking-class>
+<cabin-type>ECONOMY</cabin-type>
+<ticket-type>ECONOMY</ticket-type>
+<booking-status>P</booking-status>
+<airline-pnr>X5W4XC</airline-pnr>
+<gds-pnr/>
+<ticket-number>X5W4XC</ticket-number>
+</booking-info>
+</booking-info-list>
+</pax-pricing-info>
+</pax-pricing-info-list>
+<pax-info-list>
+<pax-info>
+<index>1</index>
+<title>Mr</title>
+<first-name>shan</first-name>
+<last-name>kum</last-name>
+<type>ADT</type>
+</pax-info>
+</pax-info-list>
+<contact-detail>
+<title>Mr</title>
+<first-name>Booking</first-name>
+<last-name>Test</last-name>
+<email>nfsfrank@hotmail.com</email>
+<address>Unit No 001, Ground Floor, DTC Bldg, Sitaram mills        compound, N.M.joshi Marg, Lower parel (E) </address>
+<mobile>919844000000</mobile>
+<landline>02240554000</landline>
+<city-name>Mumbai</city-name>
+<state-name>Maharashtra</state-name>
+<country-name>India</country-name>
+<pin-code>400011</pin-code>
+</contact-detail>
+<payment-detail>
+<payment-type>DA</payment-type>
+<amount>14160</amount>
+<payment-status>S</payment-status>
+</payment-detail>
+<insurance>
+<insured>false</insured>
+</insurance>
+<fare-rules xmlns="http://www.cleartrip.com/air/">
+<sections>
+<section>
+<title>Penalities and Cancellation</title>
+<text>&lt;b> Fare Rules from DEL  to BOM &lt;/b> &lt;br>&lt;br>&lt;ul>	&lt;li>Agent classifies this as a &lt;strong>Refundable&lt;/strong> fare&lt;/li>	&lt;li>&lt;strong>Cancellation Charges&lt;/strong>	&lt;ul>		&lt;li>Adult: only Rs. 125.0 will be deducted&lt;/li>		&lt;li>Child: only Rs. 33.0 will be deducted&lt;/li>		&lt;li>Infant: only Rs. 0.0 will be deducted&lt;/li>	&lt;/ul>&lt;/li>	&lt;li>&lt;strong>Amendment in Higher Class Charges&lt;/strong>&lt;/li>	&lt;li>&lt;strong>Amendment in Same Class Charges&lt;/strong>&lt;/li>&lt;/ul>&lt;ul>	&lt;li>Over and above the airline cancellation charges, We will levy Rs. 250 per passenger per flight and a service tax of 12.36% on it if you cancel it online from your Agent account.&lt;/li>&lt;/ul>&lt;ul>	&lt;li>Over and above the airline amendment charges, We will levy Rs. 300 per passenger per flight if you amend it online from your Agent account.&lt;/li>&lt;/ul>&lt;br>&lt;br>&lt;b> Fare Rules from BOM  to DEL &lt;/b> &lt;br>&lt;br>&lt;ul>	&lt;li>Agent classifies this as a &lt;strong>Refundable&lt;/strong> fare&lt;/li>	&lt;li>&lt;strong>Cancellation Charges&lt;/strong>	&lt;ul>		&lt;li>Adult: only Rs. 125.0 will be deducted&lt;/li>		&lt;li>Child: only Rs. 33.0 will be deducted&lt;/li>		&lt;li>Infant: only Rs. 0.0 will be deducted&lt;/li>	&lt;/ul>&lt;/li>	&lt;li>&lt;strong>Amendment in Higher Class Charges&lt;/strong>&lt;/li>	&lt;li>&lt;strong>Amendment in Same Class Charges&lt;/strong>&lt;/li>&lt;/ul>&lt;ul>	&lt;li>Over and above the airline cancellation charges, We will levy Rs. 250 per passenger per flight and a service tax of 12.36% on it if you cancel it online from your Agent account.&lt;/li>&lt;/ul>&lt;ul>	&lt;li>Over and above the airline amendment charges, We will levy Rs. 300 per passenger per flight if you amend it online from your Agent account.&lt;/li>&lt;/ul></text>
+</section>
+</sections>
+</fare-rules>
+<ancillary-data>
+<airlines>
+<airline>
+<code>SG</code>
+<name>SpiceJet</name>
+<uri>http://www.spicejet.com</uri>
+</airline>
+</airlines>
+<airports>
+<airport>
+<code>DEL</code>
+<name>Indira Gandhi Airport</name>
+<city>New Delhi</city>
+<country>India</country>
+<latitude>28.5632</latitude>
+<longitude>77.1183</longitude>
+</airport>
+<airport>
+<code>BOM</code>
+<name>Chatrapati Shivaji Airport</name>
+<city>Mumbai</city>
+<country>India</country>
+<latitude>19.0912</latitude>
+<longitude>72.866</longitude>
+</airport>
+</airports>
+</ancillary-data>
+</book-response>';
+       
+  */     
+       
+       
+       
+       /* echo "<pre>";print_r($data);exit;
+        return '<book-response xmlns="http://www.cleartrip.com/air/">
+<trip-id>Q1407230267</trip-id>
+<created-at>2014-07-23T13:47:30</created-at>
+<pricing-summary>
+<base-fare>4400.0</base-fare>
+<discount>0.0</discount>
+<markup>0.0</markup>
+<taxes>2049.61</taxes>
+<cashback>0.0</cashback>
+<total-fare>6450.0</total-fare>
+</pricing-summary>
+<flights>
+<flight>
+<segments>
+<segment>
+<index>1</index>
+<departure-airport>BLR</departure-airport>
+<arrival-airport>CJB</arrival-airport>
+<departure-date-time>2014-07-31T09:45:00</departure-date-time>
+<arrival-date-time>2014-07-31T10:50:00</arrival-date-time>
+<airline>S2</airline>
+<flight-number>3725</flight-number>
+<operating-airline>9W-K</operating-airline>
+<stops>0</stops>
+<equipment/>
+<duration>3900</duration>
+</segment>
+<segment>
+<index>2</index>
+<departure-airport>CJB</departure-airport>
+<arrival-airport>MAA</arrival-airport>
+<departure-date-time>2014-07-31T16:20:00</departure-date-time>
+<arrival-date-time>2014-07-31T17:50:00</arrival-date-time>
+<airline>S2</airline>
+<flight-number>3766</flight-number>
+<operating-airline>9W-K</operating-airline>
+<stops>0</stops>
+<equipment/>
+<duration>5400</duration>
+</segment>
+</segments>
+</flight>
+</flights>
+<pax-pricing-info-list>
+<pax-pricing-info>
+<pax-info-index>1</pax-info-index>
+<pricing-info-list>
+<pricing-info>
+<index>1</index>
+<fare-basis-code>G2A30JK,G2A30JK</fare-basis-code>
+<pricing-elements>
+<pricing-element>
+<amount>4400.0</amount>
+<category>BF</category>
+<code/>
+</pricing-element>
+<pricing-element>
+<amount>1200.0</amount>
+<category>TAX</category>
+<code>YQ</code>
+</pricing-element>
+<pricing-element>
+<amount>50.0</amount>
+<category>TAX</category>
+<code>YR</code>
+</pricing-element>
+<pricing-element>
+<amount>280.0</amount>
+<category>TAX</category>
+<code>JN</code>
+</pricing-element>
+<pricing-element>
+<amount>260.0</amount>
+<category>TAX</category>
+<code>UDF</code>
+</pricing-element>
+<pricing-element>
+<amount>225.0</amount>
+<category>TAX</category>
+<code>PSF</code>
+</pricing-element>
+<pricing-element>
+<amount>0.0</amount>
+<category>TAX</category>
+<code>CUTE</code>
+</pricing-element>
+<pricing-element>
+<amount>0.0</amount>
+<category>TAX</category>
+<code>OCT</code>
+</pricing-element>
+<pricing-element>
+<amount>34.61</amount>
+<category>TAX</category>
+<code>CLEARTRIP-SVC</code>
+</pricing-element>
+</pricing-elements>
+</pricing-info>
+</pricing-info-list>
+<booking-info-list>
+<booking-info>
+<index>1</index>
+<segment-index>1</segment-index>
+<pricing-info-index>1</pricing-info-index>
+<booking-class>G</booking-class>
+<cabin-type>ECONOMY</cabin-type>
+<ticket-type>ECONOMY</ticket-type>
+<booking-status>P</booking-status>
+<airline-pnr>EHCMFF</airline-pnr>
+<gds-pnr>6GAZ3M</gds-pnr>
+<ticket-number/>
+</booking-info>
+<booking-info>
+<index>2</index>
+<segment-index>2</segment-index>
+<pricing-info-index>1</pricing-info-index>
+<booking-class>G</booking-class>
+<cabin-type>ECONOMY</cabin-type>
+<ticket-type>ECONOMY</ticket-type>
+<booking-status>P</booking-status>
+<airline-pnr>EHCMFF</airline-pnr>
+<gds-pnr>6GAZ3M</gds-pnr>
+<ticket-number/>
+</booking-info>
+</booking-info-list>
+</pax-pricing-info>
+</pax-pricing-info-list>
+<pax-info-list>
+<pax-info>
+<index>1</index>
+<title>Mr</title>
+<first-name>shanu</first-name>
+<last-name>kumar</last-name>
+<type>ADT</type>
+</pax-info>
+</pax-info-list>
+<contact-detail>
+<title>Mr</title>
+<first-name>Booking</first-name>
+<last-name>Test</last-name>
+<email>nfsfrank@hotmail.com</email>
+<address>Unit No 001, Ground Floor, DTC Bldg, Sitaram mills        compound, N.M.joshi Marg, Lower parel (E) </address>
+<mobile>919844000000</mobile>
+<landline>02240554000</landline>
+<city-name>Mumbai</city-name>
+<state-name>Maharashtra</state-name>
+<country-name>India</country-name>
+<pin-code>400011</pin-code>
+</contact-detail>
+<payment-detail>
+<payment-type>DA</payment-type>
+<amount>6450</amount>
+<payment-status>S</payment-status>
+</payment-detail>
+<insurance>
+<insured>false</insured>
+</insurance>
+<fare-rules xmlns="http://www.cleartrip.com/air/">
+<sections>
+<section>
+<title>Penalities and Cancellation</title>
+<text>&lt;b> Fare Rules from BLR  to MAA &lt;/b> &lt;br>&lt;br>&lt;ul>	&lt;li>Agent classifies this as a &lt;strong>Refundable&lt;/strong> fare&lt;/li>	&lt;li>&lt;strong>Cancellation Charges&lt;/strong>	&lt;ul>		&lt;li>Adult: only Rs. 125.0 will be deducted&lt;/li>		&lt;li>Child: only Rs. 33.0 will be deducted&lt;/li>		&lt;li>Infant: only Rs. 0.0 will be deducted&lt;/li>	&lt;/ul>&lt;/li>	&lt;li>&lt;strong>Amendment in Higher Class Charges&lt;/strong>&lt;/li>	&lt;li>&lt;strong>Amendment in Same Class Charges&lt;/strong>&lt;/li>&lt;/ul>&lt;ul>	&lt;li>Over and above the airline cancellation charges, We will levy Rs. 250 per passenger per flight and a service tax of 12.36% on it if you cancel it online from your Agent account.&lt;/li>&lt;/ul>&lt;ul>	&lt;li>Over and above the airline amendment charges, We will levy Rs. 300 per passenger per flight if you amend it online from your Agent account.&lt;/li>&lt;/ul></text>
+</section>
+</sections>
+</fare-rules>
+<ancillary-data>
+<airlines>
+<airline>
+<code>S2</code>
+<name>JetKonnect</name>
+<uri>http://www.jetkonnect.com</uri>
+</airline>
+</airlines>
+<airports>
+<airport>
+<code>BLR</code>
+<name>Bengaluru International Airport</name>
+<city>Bangalore</city>
+<country>India</country>
+<latitude>12.9601</latitude>
+<longitude>77.6552</longitude>
+</airport>
+<airport>
+<code>CJB</code>
+<name>Peelamedu</name>
+<city>Coimbatore</city>
+<country>India</country>
+<latitude>11.0317</latitude>
+<longitude>77.0431</longitude>
+</airport>
+<airport>
+<code>MAA</code>
+<name>Chennai Airport</name>
+<city>Chennai</city>
+<country>India</country>
+<latitude>12.9911</latitude>
+<longitude>80.1694</longitude>
+</airport>
+</airports>
+</ancillary-data>
+</book-response>';*/
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+      /* return '<book-response xmlns="http://www.cleartrip.com/air/">
+<trip-id>Q1407230120</trip-id>
+<created-at>2014-07-23T11:58:23</created-at>
+<pricing-summary>
+<base-fare>3350.0</base-fare>
+<discount>0.0</discount>
+<markup>0.0</markup>
+<taxes>3636.84</taxes>
+<cashback>0.0</cashback>
+<total-fare>6987.0</total-fare>
+</pricing-summary>
+<flights>
+<flight>
+<segments>
+<segment>
+<index>1</index>
+<departure-airport>DEL</departure-airport>
+<arrival-airport>MAA</arrival-airport>
+<departure-date-time>2014-07-31T06:50:00</departure-date-time>
+<arrival-date-time>2014-07-31T09:35:00</arrival-date-time>
+<airline>S2</airline>
+<flight-number>5094</flight-number>
+<operating-airline>S2</operating-airline>
+<stops>0</stops>
+<equipment/>
+<duration>9900</duration>
+</segment>
+</segments>
+</flight>
+</flights>
+<pax-pricing-info-list>
+<pax-pricing-info>
+<pax-info-index>1</pax-info-index>
+<pricing-info-list>
+<pricing-info>
+<index>1</index>
+<fare-basis-code>G2A30AFS</fare-basis-code>
+<pricing-elements>
+<pricing-element>
+<amount>3350.0</amount>
+<category>BF</category>
+<code/>
+</pricing-element>
+<pricing-element>
+<amount>2450.0</amount>
+<category>TAX</category>
+<code>YQ</code>
+</pricing-element>
+<pricing-element>
+<amount>50.0</amount>
+<category>TAX</category>
+<code>YR</code>
+</pricing-element>
+<pricing-element>
+<amount>664.0</amount>
+<category>TAX</category>
+<code>UDF</code>
+</pricing-element>
+<pricing-element>
+<amount>290.0</amount>
+<category>TAX</category>
+<code>JN</code>
+</pricing-element>
+<pricing-element>
+<amount>147.0</amount>
+<category>TAX</category>
+<code>PSF</code>
+</pricing-element>
+<pricing-element>
+<amount>0.0</amount>
+<category>TAX</category>
+<code>CUTE</code>
+</pricing-element>
+<pricing-element>
+<amount>0.0</amount>
+<category>TAX</category>
+<code>OCT</code>
+</pricing-element>
+<pricing-element>
+<amount>35.84</amount>
+<category>TAX</category>
+<code>CLEARTRIP-SVC</code>
+</pricing-element>
+</pricing-elements>
+</pricing-info>
+</pricing-info-list>
+<booking-info-list>
+<booking-info>
+<index>1</index>
+<segment-index>1</segment-index>
+<pricing-info-index>1</pricing-info-index>
+<booking-class>G</booking-class>
+<cabin-type>ECONOMY</cabin-type>
+<ticket-type>ECONOMY</ticket-type>
+<booking-status>P</booking-status>
+<airline-pnr>EHZBFJ</airline-pnr>
+<gds-pnr>6GAT5O</gds-pnr>
+<ticket-number/>
+</booking-info>
+</booking-info-list>
+</pax-pricing-info>
+</pax-pricing-info-list>
+<pax-info-list>
+<pax-info>
+<index>1</index>
+<title>Mr</title>
+<first-name>salman</first-name>
+<last-name>kumar</last-name>
+<type>ADT</type>
+</pax-info>
+</pax-info-list>
+<contact-detail>
+<title>Mr</title>
+<first-name>Booking</first-name>
+<last-name>Test</last-name>
+<email>nfsfrank@hotmail.com</email>
+<address>Unit No 001, Ground Floor, DTC Bldg, Sitaram mills        compound, N.M.joshi Marg, Lower parel (E) </address>
+<mobile>919844000000</mobile>
+<landline>02240554000</landline>
+<city-name>Mumbai</city-name>
+<state-name>Maharashtra</state-name>
+<country-name>India</country-name>
+<pin-code>400011</pin-code>
+</contact-detail>
+<payment-detail>
+<payment-type>DA</payment-type>
+<amount>6987</amount>
+<payment-status>S</payment-status>
+</payment-detail>
+<insurance>
+<insured>false</insured>
+</insurance>
+<fare-rules xmlns="http://www.cleartrip.com/air/">
+<sections>
+<section>
+<title>Penalities and Cancellation</title>
+<text>&lt;b> Fare Rules from DEL  to MAA &lt;/b> &lt;br>&lt;br>&lt;ul>	&lt;li>Agent classifies this as a &lt;strong>Refundable&lt;/strong> fare&lt;/li>	&lt;li>&lt;strong>Cancellation Charges&lt;/strong>	&lt;ul>		&lt;li>Adult: only Rs. 125.0 will be deducted&lt;/li>		&lt;li>Child: only Rs. 33.0 will be deducted&lt;/li>		&lt;li>Infant: only Rs. 0.0 will be deducted&lt;/li>	&lt;/ul>&lt;/li>	&lt;li>&lt;strong>Amendment in Higher Class Charges&lt;/strong>&lt;/li>	&lt;li>&lt;strong>Amendment in Same Class Charges&lt;/strong>&lt;/li>&lt;/ul>&lt;ul>	&lt;li>Over and above the airline cancellation charges, We will levy Rs. 250 per passenger per flight and a service tax of 12.36% on it if you cancel it online from your Agent account.&lt;/li>&lt;/ul>&lt;ul>	&lt;li>Over and above the airline amendment charges, We will levy Rs. 300 per passenger per flight if you amend it online from your Agent account.&lt;/li>&lt;/ul></text>
+</section>
+</sections>
+</fare-rules>
+<ancillary-data>
+<airlines>
+<airline>
+<code>S2</code>
+<name>JetKonnect</name>
+<uri>http://www.jetkonnect.com</uri>
+</airline>
+</airlines>
+<airports>
+<airport>
+<code>DEL</code>
+<name>Indira Gandhi Airport</name>
+<city>New Delhi</city>
+<country>India</country>
+<latitude>28.5632</latitude>
+<longitude>77.1183</longitude>
+</airport>
+<airport>
+<code>MAA</code>
+<name>Chennai Airport</name>
+<city>Chennai</city>
+<country>India</country>
+<latitude>12.9911</latitude>
+<longitude>80.1694</longitude>
+</airport>
+</airports>
+</ancillary-data>
+</book-response>';
+*/
+
+	}
+	
+        public static function cleartrip_checkout($value)
+        {
+
+        $json['Posted']=$_POST;
+        $json['Customer_Id']=1;
+        $json['Created_Date']=date('Y-m-d H:i:s');
+        $json['Patner_Id']=5;
+        $json['API_Type']='Cleartrip_flights';
+        
+        $json['name'] ='Flights';
+        
+        $test =json_encode($json);
+        $save['input']=$test;
+        $save['order_id']='';
+        $json['api_pid'] = Checkoutmodel::do_checkout($save);
+
+        $ticket['quantity']=1;
+        $ticket['description']='<b>Flights:</b> ';
+        $ticket['json']=$json;
+        $ticket['partner']='clear trip Flights';
+        
+        return $ticket;
+
+
+        }
+         public static function goibibo_checkout($value)
+        {
+        
+        $json['Posted']=$_POST;
+        $json['Customer_Id']=1;
+        $json['Created_Date']=date('Y-m-d H:i:s');
+        $json['Patner_Id']=5;
+        $json['API_Type']='goibibo_flights';
+        $json['name'] ='Flights';
+        
+        $test =json_encode($json);
+        $save['input']=$test;
+        $save['order_id']='';
+        $json['api_pid'] = Checkoutmodel::do_checkout($save);
+        $ticket['partner']='goibibo';
+        $ticket['quantity']=1;
+        $ticket['description']='<b>Flights:</b> ';
+        $ticket['json']=$json;
+
+        return $ticket;
+
+
+        }
+        
+        public static function goibibo_booking($api,$customer,$id)
+        { 
+           
+   
+          $url = 'http://pp.goibibobusiness.com/api/book/';
+          
+          //$booking_data=urldecode($api['Posted']['booking_data']);
+          
+          
+          //echo "<pre>";print_r(urldecode($api['Posted']['booking_data']));exit;
+          //echo "<pre>";print_r($booking_data);exit;
+          $booking_data_decode=json_decode(urldecode($api['Posted']['booking_data']));
+          //echo "<pre>";print_r($booking_data_decode);exit;
+          //$booking_data_decode.=array("carriers"=>"ALL");
+          
+         
+          //echo "<pre>";print_r(urldecode($api['Posted']['booking_data']));exit;
+          
+         // echo "<pre>";print_r(json_encode($booking_data_decode->data->onwardflights));exit;
+          $booking_data0= (array) $booking_data_decode->data->onwardflights['0'];
+          $booking_data1= array("carriers"=>"ALL");
+          $onward=json_encode(array_merge_recursive($booking_data0,$booking_data1));
+          
+          //connection flights    
+          if(isset($booking_data_decode->data->onwardflights['0']->onwardflights) && $booking_data_decode->data->onwardflights['0']->onwardflights)    
+          {
+              //echo "<pre>";print_r($booking_data_decode->data->onwardflights['0']->onwardflights);exit;
+             $count=count($booking_data_decode->data->onwardflights['0']->onwardflights);
+             $con_onward = '';
+             
+             for($i=0;$i<$count;$i++)
+             {
+                 $booking_data4= array("carriers"=>"ALL"); 
+                 //echo "<pre>";print_r(json_encode((array)$booking_data_decode->data->onwardflights['0']->onwardflights[$i]));
+                $con_onward_temp=$booking_data_decode->data->onwardflights['0']->onwardflights[$i];
+                //echo "<pre>";print_r($con_onward_temp);
+                $con_onward .= json_encode(array_merge_recursive((array)$con_onward_temp,$booking_data4)); 
+                //echo "<pre>";print_r($con_onward);exit;
+             }
+             //exit;
+             //echo "<pre>";print_r($con_onward);exit;
+             $conection_onward=rtrim($con_onward, ',');
+             //echo "<pre>";print_r($conection_onward);exit;
+              
+              
+          }
+          
+          //connection return flights    
+          if(isset($booking_data_decode->data->returnflights['0']->onwardflights) && $booking_data_decode->data->returnflights['0']->onwardflights)    
+          {
+              //echo "<pre>";print_r($booking_data_decode->data->returnflights['0']->returnflights);exit;
+             $count=count($booking_data_decode->data->returnflights['0']->onwardflights);
+             $con_return = '';
+             
+             for($i=0;$i<$count;$i++)
+             {
+                 $booking_data4= array("carriers"=>"ALL"); 
+                 //echo "<pre>";print_r(json_encode((array)$booking_data_decode->data->returnflights['0']->returnflights[$i]));
+                $con_return_temp=$booking_data_decode->data->returnflights['0']->onwardflights[$i];
+                //echo "<pre>";print_r($con_return_temp);
+                $con_return .= json_encode(array_merge_recursive((array)$con_return_temp,$booking_data4)); 
+                //echo "<pre>";print_r($con_return);exit;
+             }
+             //exit;
+             //echo "<pre>";print_r($con_return);exit;
+             $conection_return=rtrim($con_return, ',');
+             //echo "<pre>";print_r($conection_return);exit;
+              
+              
+          }
+          
+          if(isset($booking_data_decode->data->returnflights['0']) && $booking_data_decode->data->returnflights['0']<>'')
+          {
+          $booking_data2= (array) $booking_data_decode->data->returnflights['0'];
+          
+          $booking_data3= array("carriers"=>"ALL"); 
+          
+          //$onward=json_encode(array_merge_recursive($booking_data0,$booking_data1));
+          $return=json_encode(array_merge_recursive($booking_data2,$booking_data3));
+          
+          
+          if(isset($booking_data_decode->data->onwardflights['0']->onwardflights) && !empty($booking_data_decode->data->onwardflights['0']->onwardflights) && isset($booking_data_decode->data->returnflights['0']->onwardflights) && !empty($booking_data_decode->data->returnflights['0']->onwardflights))
+          {
+           
+          $booking_data="[".$onward.",".$conection_onward.",".$return.",".$conection_return."]";
+          //echo "<pre>";print_r($booking_data);exit;
+          }
+          else if(isset($booking_data_decode->data->onwardflights['0']->onwardflights) && !empty($booking_data_decode->data->onwardflights['0']->onwardflights))
+          {
+          $booking_data="[".$onward.",".$conection_onward.",".$return."]";    
+          }
+          else if(isset($booking_data_decode->data->returnflights['0']->onwardflights) && !empty($booking_data_decode->data->returnflights['0']->onwardflights))
+          {
+         $booking_data="[".$onward.",".$return.",".$conection_return."]";  
+          }    
+          else
+          {
+            $booking_data="[".$onward.','.$return."]";
+          }
+          
+          
+          
+          
+          
+          
+          //$booking_data="[".$onward.','.$return."]";
+          //echo "<pre>";print_r($booking_data);exit;
+          $searchKey_return=$booking_data_decode->data->returnflights['0']->searchKey; 
+          }
+          else
+          {
+          //echo "<pre>";print_r($booking_data_decode->data->onwardflights['0']->onwardflights);exit;    
+          
+          if(isset($booking_data_decode->data->onwardflights['0']->onwardflights) && $booking_data_decode->data->onwardflights['0']->onwardflights<>'')
+          {
+           $booking_data="[".$onward."]"; 
+          //$booking_data="[".$onward.",".$conection_onward."]";
+          //echo "<pre>";print_r($booking_data);exit;
+          }
+          else
+          {
+            $booking_data="[".$onward.",".$conection_onward."]";  
+          }
+          }
+          
+          //echo "<pre>";print_r($booking_data);
+          $query_data=urldecode($api['Posted']['querydata']);
+          //echo "<pre>";print_r($query_data);
+          //total fare
+          if(isset($booking_data_decode->data->returnflights['0']) && $booking_data_decode->data->returnflights['0']<>'')
+          {
+          $fare=$booking_data_decode->data->onwardflights['0']->fare->totalfare+$booking_data_decode->data->returnflights['0']->fare->totalfare;
+          }
+          else
+          {
+           $fare=$booking_data_decode->data->onwardflights['0']->fare->totalfare;    
+          }
+          //echo "<pre>";print_r($fare);
+          //search key
+          $searchKey_onward=$booking_data_decode->data->onwardflights['0']->searchKey; 
+          //echo "<pre>";print_r($searchKey_onward);
+          $book_passenger=json_decode(urldecode($api['Posted']['book_passenger']));
+          
+          
+          $count_passengers=$book_passenger->adults+$book_passenger->children+$book_passenger->infants;
+          
+          $i=3;
+        
+          
+             
+           for($j=0;$j<$book_passenger->adults;$j++)
+           {
+            
+          $passenger_info="[";     
+          $passenger_info.='{ 
+        "FirstName": "'.$api['Posted']['firstname'.$i].'",
+        "eticketnumber": "",
+        "LastName": "'.$api['Posted']['lastname'.$i].'",
+        "Title": "1",
+        "DateOfBirth": "'.$api['Posted']['datepicker'.$i].'",
+        "Type": "A"
+        }';
+          $i++;
+           }
+          
+           
+           for($k=0;$k<$book_passenger->children;$k++)
+           { 
+          $passenger_info.=',{ 
+        "FirstName": "'.$api['Posted']['firstname'.$i].'",
+        "eticketnumber": "",
+        "LastName": "'.$api['Posted']['lastname'.$i].'",
+        "Title": "1",
+        "DateOfBirth": "'.$api['Posted']['datepicker'.$i].'",
+        "Type": "C"
+        }';
+          $i++;
+           }
+             
+           for($l=0;$l<$book_passenger->infants;$l++)
+           {
+          $passenger_info.=',{ 
+        "FirstName": "'.$api['Posted']['firstname'.$i].'",
+        "eticketnumber": "",
+        "LastName": "'.$api['Posted']['lastname'.$i].'",
+        "Title": "1",
+        "DateOfBirth": "'.$api['Posted']['datepicker'.$i].'",
+        "Type": "I"
+        }';
+           }
+          
+         $passenger_info.="]";  
+          
+         
+        
+        $Contact_Info = '{
+        "pincode": "110110",
+        "state": "delhi",
+        "firstname": "'.$api['Posted']['first_name'].'",
+        "lastname": "'.$api['Posted']['last_name'].'",
+        "email": "'.$api['Posted']['s_email'].'",
+        "landline": "08049058444",
+        "mobile": "'.$api['Posted']['mobile'].'",
+        "payment": "AXIS",
+        "address": "new_address123",
+        "city": "New Delhi"
+        }';  
+        
+        $ch=curl_init($url);
+        //$data_string = urlencode(json_encode($data));
+        curl_setopt($ch, CURLOPT_USERPWD, "hdfcsmartbuy@reward360.co:reward-123");
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        
+        //echo "<pre>";print_r($passenger_info);
+        //echo "<pre>";print_r($Contact_Info);
+        if(isset($booking_data_decode->data->returnflights['0']) && $booking_data_decode->data->returnflights['0']<>'')
+          {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, array("bookingdata"=>$booking_data,"querydata"=>$query_data,"fare"=>$fare,"searchKey_onward"=>$searchKey_onward,"searchKey_return"=>$searchKey_return,'paxinfo'=>$passenger_info,'contactinfo'=>$Contact_Info ));
+          }
+          else
+          {
+          curl_setopt($ch, CURLOPT_POSTFIELDS, array("bookingdata"=>$booking_data,"querydata"=>$query_data,"fare"=>$fare,"searchKey_onward"=>$searchKey_onward,'paxinfo'=>$passenger_info,'contactinfo'=>$Contact_Info ));    
+          }
+
+    $result = curl_exec($ch);
+    
+    $decode=json_decode($result);
+    if(isset($decode->Error))
+    {
+     return "some problem in booking";   
+    }
+    else
+    {
+    //echo "<pre>";print_r($result);
+    //exit;
+    $json_decode=json_decode($result);
+    //echo "<pre>";print_r($json_decode);
+    //exit;
+    $test=trim("reward-123".$json_decode->data->customReference."|".$json_decode->data->amount."|".strtolower($json_decode->data->productinfo)."|".strtolower($api['Posted']['first_name'].$api['Posted']['last_name'])."|".strtolower($api['Posted']['s_email'])."|temp|true|travelibibo");
+    //echo "<pre>";print_r($test);
+    //exit;
+    $sha=hash( 'sha512', trim($test) );
+    $url1 = 'http://pp.goibibobusiness.com/api/confirm/';
+    $ch=curl_init($url1);
+    curl_setopt($ch, CURLOPT_USERPWD, "hdfcsmartbuy@reward360.co:reward-123");
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+     //echo "<pre>";print_r($sha);exit;
+    curl_setopt($ch, CURLOPT_POSTFIELDS, array("BookingId"=>$json_decode->data->customReference,"secret"=>trim($sha) ));
+    $result1 = curl_exec($ch);
+    
+    //echo "<pre>";print_r($result1);exit;
+
+
+    return $result1;
+    }
+    return '{
+    "data": [
+        {
+            "status": "manual", 
+            "passengers": [
+                {
+                    "segmentid": "1", 
+                    "firstname": "siva", 
+                    "title": "1", 
+                    "lastname": "Shanker", 
+                    "eticketnumber": "", 
+                    "bookingclass": "", 
+                    "type": "A", 
+                    "id": "0"
+                }
+            ], 
+            "bookingid": "AMD6GSKQY", 
+            "eticketnumber": "", 
+            "totalfare": "2742.0", 
+            "goibibodiscount": 0.0, 
+            "bookingrequestid": "GOFLDfe81e1407016194", 
+            "finalfare": "2742.0", 
+            "transactionfee": 0, 
+            "flightdetails": [
+                {
+                    "referenceid": "1", 
+                    "segmentid": "1", 
+                    "eticketnumber": "", 
+                    "airlinepnr": "", 
+                    "destination": "BOM", 
+                    "depterminal": "", 
+                    "deptime": "2014-10-22T1240", 
+                    "source": "BLR", 
+                    "carrierid": "S2", 
+                    "airline": "JetKonnect", 
+                    "seats": [
+                        null
+                    ], 
+                    "arrtime": "2014-10-22T1410", 
+                    "arrterminal": "1B", 
+                    "flightno": "4165"
+                }
+            ], 
+            "plist": [
+                {
+                    "LastName": "shanker", 
+                    "pttype": "PT", 
+                    "Type": "A", 
+                    "FirstName": "siva", 
+                    "refrence": "2"
+                }
+            ]
+        }
+    ], 
+    "data_length": 1
+}';
+        }
+        
+        public static function reprice($book_passsenger,$reprice_request)
+        {
+        //echo "<pre>";print_r($_POST);exit;
+            
+        $url = 'http://pp.goibibobusiness.com/api/reprice/';
+        //echo "<pre>";print_r($reprice_request);exit;
+            //connection flights
+        if(isset($reprice_request->onwardflights) && $reprice_request->onwardflights<>'')
+        {
+            //echo "<pre>";print_r(urldecode($_POST['fuldata']));exit;
+            $booking_data_temp= urldecode($_POST['fuldata']);
+            
+            
+            $count=count($reprice_request->onwardflights);
+            
+            for($i=0;$i<$count;$i++)
+            { 
+               
+               $booking_data_temp.= ",". json_encode($reprice_request->onwardflights[$i]) ;
+            }
+            //echo "<pre>";print_r($booking_data_temp);exit;
+            
+              
+            //international flights
+            //echo "<pre>";print_r($reprice_request->returnfl);exit;
+        if(isset($reprice_request->returnfl) && !empty($reprice_request->returnfl))
+        {
+           //echo "<pre>";print_r(urldecode($_POST['fuldata']));exit;
+            $booking_data_temp1= '';
+            
+            
+           $count=count($reprice_request->returnfl);
+            
+            for($i=0;$i<$count;$i++)
+            { 
+               
+               $booking_data_temp1.=  ",". json_encode($reprice_request->returnfl[$i]) ;
+            }
+            //echo "<pre>";print_r($reprice_request->returnfl['0']->onwardflights);exit;
+            if(isset($reprice_request->returnfl['0']->onwardflights) && !empty($reprice_request->returnfl['0']->onwardflights))
+            {
+            $count1=count($reprice_request->returnfl['0']->onwardflights);
+            
+            for($i=0;$i<$count1;$i++)
+            { 
+               
+               $booking_data_temp1.=  ",". json_encode($reprice_request->returnfl['0']->onwardflights[$i]) ;
+            }
+            
+            
+               $booking_data_temp.=$booking_data_temp1;
+            } 
+
+        }
+            
+               
+              
+               $booking_data_onward=$booking_data_temp;
+
+        }
+        else
+        {
+            $booking_data_onward= "[". urldecode($_POST['fuldata']. "]");
+            
+            
+        }
+        
+        
+        
+           
+        //echo "<pre>";print_r($booking_data_returnfl);exit;
+        //round trip return
+        if(isset($_POST['returndata']) && $_POST['returndata']<>'')
+        {
+        $reprice_return_request=json_decode(urldecode($_POST['returndata']));
+        
+        if(isset($reprice_return_request->onwardflights) && $reprice_return_request->onwardflights<>'')
+        {
+            //echo "<pre>";print_r(urldecode($_POST['returndata']));exit;
+            $booking_data_temp=  urldecode($_POST['returndata']);
+            
+            
+            $count=count($reprice_return_request->onwardflights);
+            
+            for($i=0;$i<$count;$i++)
+            { 
+               
+               $booking_data_temp.= ",". json_encode($reprice_return_request->onwardflights[$i]) ;
+            }
+               
+              
+               $booking_data_return=$booking_data_temp;
+               
+               //search key
+               $searchKey_return=$reprice_return_request->searchKey;
+
+        }
+        else
+        {
+            $booking_data_return= urldecode($_POST['returndata']);
+        }
+        
+        //forming a json structure
+        $booking_data="[".$booking_data_onward.",".$booking_data_return."]";
+        }
+        else
+        {
+            
+        //forming a json structure
+        $booking_data="[".$booking_data_onward."]";
+        }
+        
+        
+            //echo "<pre>";print_r($booking_data);exit;
+        
+       
+        
+       
+        
+         // $booking_data="[".urldecode($booking_construct)."]";           
+          //echo "<pre>";print_r($book_passsenger);exit;         
+                    // details entered in the search form
+        if(isset($_POST['returndata']) && $_POST['returndata']<>''|| isset($reprice_request->returnfl) )
+        {
+         $querydata_temp=array
+                                (
+                        "origin"=> $book_passsenger['leavingfrom'],
+                        "destination"=> $book_passsenger['goingto'],
+                        "arrdate"=>date('Y-m-d',strtotime($book_passsenger['return'])),
+                        "depdate"=> date('Y-m-d',strtotime($book_passsenger['departure'])),
+                        "adults"=> $book_passsenger['adults'],
+                        "infants"=> $book_passsenger['infants'],
+                        "children"=> $book_passsenger['children']
+                                );   
+        }
+        else
+        {
+                    $querydata_temp=array
+                                (
+                        "origin"=> $book_passsenger['leavingfrom'],
+                        "destination"=> $book_passsenger['goingto'],
+                        "depdate"=> date('Y-m-d',strtotime($book_passsenger['departure'])),
+                        "adults"=> $book_passsenger['adults'],
+                        "infants"=> $book_passsenger['infants'],
+                        "children"=> $book_passsenger['children']
+                                );
+        }          
+                    
+                    $querydata= json_encode($querydata_temp);
+                    
+                     //echo "<pre>";print_r($querydata);exit;   
+                    //total fare
+                    if(isset($_POST['returndata']) && $_POST['returndata']<>'')
+                    {
+                    $fare=$reprice_request->fare->totalfare+$reprice_return_request->fare->totalfare;
+                    }
+                    else
+                    {
+                    //    echo "<pre>";print_r($reprice_request);exit;
+                    $fare=$reprice_request->fare->totalfare;
+                    }
+                    //echo "<pre>";print_r($fare);exit;
+                    //search key
+                     
+                    $searchKey_onward=$reprice_request->searchKey;       
+                    //echo "<pre>";print_r($searchKey_onward);exit;
+                    $ch=curl_init($url);
+                    //$data_string = urlencode(json_encode($data));
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                    curl_setopt($ch, CURLOPT_USERPWD, "hdfcsmartbuy@reward360.co:reward-123");
+                    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+                    if(isset($_POST['returndata']) && $_POST['returndata']<>'')
+                    {
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, array("bookingdata"=>$booking_data,"querydata"=>$querydata,"fare"=>$fare,"searchKey_onward"=>$searchKey_onward,"searchKey_return"=>$searchKey_return));
+                    }
+                    else
+                    {
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, array("bookingdata"=>$booking_data,"querydata"=>$querydata,"fare"=>$fare,"searchKey_onward"=>$searchKey_onward));
+                    }
+
+                    
+                    $result = curl_exec($ch);
+                  
+                    //this is for sending to view
+                    $data['booking_data']=$_POST['fuldata'];    
+                    $data['querydata']=$querydata;
+                    
+                     //total fare
+                    $data['fare']=$reprice_request->fare->totalfare;
+                    
+                    //search key
+                    $data['searchKey_onward']=$reprice_request->searchKey;
+        return $json_data=$result;
+        
+        return '{
+    "data": {
+        "returnflights": [
+            {
+                "origin": "maa", 
+                "EticketFlag": "y", 
+                "ibibopartner": "amadeus", 
+                "farebasis": "SAP90/Y", 
+                "breakpoint": "Y", 
+                "tickettime": "2014-06-18 00:00:00", 
+                "deptime": "17:35", 
+                "flightcode": "967", 
+                "duration": "21h 15m", 
+                "qtype": "fbs", 
+                "tickettype": "e", 
+                "flightno": "967", 
+                "flightproposal": "1", 
+                "destination": "trv", 
+                "stops": "1", 
+                "farebasislst1": "[uADT-SAP90-Y-S-9, uADT-SAP90-Y-S-9]", 
+                "seatsavailable": "9", 
+                "carrierid": "AI", 
+                "farelst1": "[uADT-SAP90-Y-S-9, uADT-SAP90-Y-S-9]", 
+                "sellfromrec": "true", 
+                "fare": {
+                    "totalbasefare": 388.0, 
+                    "adultbasefare": 388.0, 
+                    "adultjn": 203.0, 
+                    "amadeusgrossamount": 4625.0, 
+                    "totalfare": 4625.0, 
+                    "totalcommission": 0.0, 
+                    "adultudf": 187.0, 
+                    "adultfuelsurcharge": 3700.0, 
+                    "totaltax": 4237.0, 
+                    "totalsurcharge": 3700.0, 
+                    "totaludf": 187.0, 
+                    "transactionfee": 0, 
+                    "adulttax": 4237.0, 
+                    "discount": 0, 
+                    "adultpassengerservicefee": 147.0, 
+                    "adulttotalfare": 4625.0, 
+                    "servicetax": 0.0
+                }, 
+                "promotionText": "", 
+                "warnings": "Refundable", 
+                "company": "AI", 
+                "onwardflights": [
+                    {
+                        "origin": "trv", 
+                        "EticketFlag": "y", 
+                        "flightcode": "264", 
+                        "farebasis": "SAP90/Y", 
+                        "seatingclass": "E", 
+                        "deptime": "13:40", 
+                        "tickettype": "e", 
+                        "flightno": "264", 
+                        "destination": "blr", 
+                        "seatsavailable": "9", 
+                        "carrierid": "AI", 
+                        "fare": {
+                            "totalbasefare": 0, 
+                            "adultbasefare": 0, 
+                            "adultjn": 0, 
+                            "amadeusgrossamount": 0, 
+                            "totalfare": 0, 
+                            "totalcommission": 0, 
+                            "adultudf": 0, 
+                            "adultfuelsurcharge": 0, 
+                            "totaltax": 0, 
+                            "totalsurcharge": 0, 
+                            "totaludf": 0, 
+                            "adulttax": 0, 
+                            "adultpassengerservicefee": 0, 
+                            "adulttotalfare": 0, 
+                            "servicetax": 0
+                        }, 
+                        "promotionText": "", 
+                        "aircraftType": "320", 
+                        "breakpoint": "Y", 
+                        "operatingcarrier": "ai", 
+                        "splitduration": "1h 10m", 
+                        "farerule": "", 
+                        "bookingclass": "S", 
+                        "airline": "Air India", 
+                        "depdate": "2014-11-21t1340", 
+                        "arrtime": "14:50", 
+                        "arrdate": "2014-11-21t1450"
+                    }
+                ], 
+                "aircraftType": "320", 
+                "seatingclass": "E", 
+                "SessionData": {
+                    "sessionid": "0185GZWJ7A", 
+                    "securitytoken": "2LSCM5E6UOMU25139NLTGY97D", 
+                    "sequencenumber": "2", 
+                    "officeid": "BOMVS35SC"
+                }, 
+                "operatingcarrier": "ai", 
+                "dotentative": "true", 
+                "splitduration": "1h 15m", 
+                "farerule": "", 
+                "searchKey": "203.0:0:187.0:3700.0:0:388.0:147.0:4625.0:0:0:0:0:0:0:0:0:4625.0:388.0:4625.0:0:3700.0:0:0.0:0.0:0:0185GZWJ7A:2LSCM5E6UOMU25139NLTGY97D:2:AI", 
+                "bookingclass": "S", 
+                "airline": "Air India", 
+                "rowbody": " ", 
+                "depdate": "2014-11-20t1735", 
+                "arrtime": "18:50", 
+                "arrdate": "2014-11-20t1850"
+            }
+        ], 
+        "onwardflights": [
+            {
+                "origin": "blr", 
+                "fare": {
+                    "totalbasefare": 388.0, 
+                    "adultbasefare": 388.0, 
+                    "adultjn": 203.0, 
+                    "amadeusgrossamount": 4923.0, 
+                    "totalfare": 4923.0, 
+                    "totalcommission": 0.0, 
+                    "adultudf": 260.0, 
+                    "adultfuelsurcharge": 3700.0, 
+                    "totaltax": 4535.0, 
+                    "totalsurcharge": 3700.0, 
+                    "totaludf": 260.0, 
+                    "transactionfee": 0, 
+                    "adulttax": 4535.0, 
+                    "discount": 0, 
+                    "adultpassengerservicefee": 372.0, 
+                    "adulttotalfare": 4923.0, 
+                    "servicetax": 0.0
+                }, 
+                "ibibopartner": "amadeus", 
+                "farebasis": "SAP90/Y", 
+                "breakpoint": "Y", 
+                "tickettime": "2014-06-18 00:00:00", 
+                "deptime": "08:15", 
+                "flightcode": "517", 
+                "duration": "11h 50m", 
+                "qtype": "fbs", 
+                "tickettype": "e", 
+                "flightno": "517", 
+                "flightproposal": "1", 
+                "destination": "hyd", 
+                "stops": "1", 
+                "seatsavailable": "9", 
+                "carrierid": "AI", 
+                "sellfromrec": "true", 
+                "EticketFlag": "y", 
+                "promotionText": "", 
+                "warnings": "Refundable", 
+                "company": "AI", 
+                "onwardflights": [
+                    {
+                        "origin": "hyd", 
+                        "EticketFlag": "y", 
+                        "flightcode": "546", 
+                        "farebasis": "SAP90/Y", 
+                        "seatingclass": "E", 
+                        "deptime": "19:00", 
+                        "tickettype": "e", 
+                        "flightno": "546", 
+                        "destination": "maa", 
+                        "seatsavailable": "9", 
+                        "carrierid": "AI", 
+                        "fare": {
+                            "totalbasefare": 0, 
+                            "adultbasefare": 0, 
+                            "adultjn": 0, 
+                            "amadeusgrossamount": 0, 
+                            "totalfare": 0, 
+                            "totalcommission": 0, 
+                            "adultudf": 0, 
+                            "adultfuelsurcharge": 0, 
+                            "totaltax": 0, 
+                            "totalsurcharge": 0, 
+                            "totaludf": 0, 
+                            "adulttax": 0, 
+                            "adultpassengerservicefee": 0, 
+                            "adulttotalfare": 0, 
+                            "servicetax": 0
+                        }, 
+                        "promotionText": "", 
+                        "aircraftType": "320", 
+                        "breakpoint": "Y", 
+                        "operatingcarrier": "ai", 
+                        "splitduration": "1h 5m", 
+                        "farerule": "", 
+                        "bookingclass": "S", 
+                        "airline": "Air India", 
+                        "depdate": "2014-10-30t1900", 
+                        "arrtime": "20:05", 
+                        "arrdate": "2014-10-30t2005"
+                    }
+                ], 
+                "aircraftType": "319", 
+                "seatingclass": "E", 
+                "arrtime": "09:20", 
+                "SessionData": {
+                    "sessionid": "0185GZWJ7A", 
+                    "securitytoken": "2LSCM5E6UOMU25139NLTGY97D", 
+                    "sequencenumber": "2", 
+                    "officeid": "BOMVS35SC"
+                }, 
+                "farelst1": "[uADT-SAP90-Y-S-9, uADT-SAP90-Y-S-9]", 
+                "operatingcarrier": "ai", 
+                "dotentative": "true", 
+                "splitduration": "1h 5m", 
+                "farerule": "", 
+                "searchKey": "203.0:0:260.0:3700.0:0:388.0:372.0:4923.0:0:0:0:0:0:0:0:0:4923.0:388.0:4923.0:0:3700.0:0:0.0:0.0:0:0185GZWJ7A:2LSCM5E6UOMU25139NLTGY97D:2:AI", 
+                "bookingclass": "S", 
+                "airline": "Air India", 
+                "rowbody": " ", 
+                "depdate": "2014-10-30t0815", 
+                "farebasislst1": "[uADT-SAP90-Y-S-9, uADT-SAP90-Y-S-9]", 
+                "arrdate": "2014-10-30t0920"
+            }
+        ], 
+        "faredict": {
+            "kbb": "aNlz", 
+            "totalsurcharge": 7400, 
+            "passengercount": "1", 
+            "netpayable": 9548, 
+            "repriceloss": 0, 
+            "tokenec": "c1874a9b6ba6501fab5658621fcb03bd", 
+            "lead_message": "", 
+            "promocode": "", 
+            "totalbasefare": 776, 
+            "kb": "temp", 
+            "totalfare": 9548, 
+            "goibibofee": 0, 
+            "credits": "False", 
+            "transactionfee": 0, 
+            "leaddiscount": 0, 
+            "premiermiles": 0, 
+            "fuelsurcharge": 0, 
+            "leadcode": "", 
+            "cafecommission": 0, 
+            "discount": 0, 
+            "dob": false, 
+            "k": "temp", 
+            "promo_message": "", 
+            "promodiscount": 0, 
+            "leadlist": []
+        }, 
+        "offer_key": ""
+    }, 
+    "data_length": 4
+}';
+        }
+
+}

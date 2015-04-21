@@ -1,0 +1,52 @@
+<div class="container breadcrub">
+	    <div>
+			<a class="homebtn left" href="#"></a>
+			<div class="left">
+				<ul class="bcrumbs">
+					<li>/</li>
+					<li><a href="#" class="active"><?php echo $content->title; ?></a></li>					
+				</ul>				
+			</div>
+			<a class="backbtn right" href="#"></a>
+		</div>
+		<div class="clearfix"></div>
+		<div class="brlines"></div>
+	</div>	 
+
+	<!-- CONTENT -->
+	<div class="container">
+
+		
+		<div class="container mt25 offset-0">
+			
+			
+			<!-- CONTENT -->
+			<div class="col-md-12 pagecontainer2 offset-0">
+				<div class="hpadding50c">
+					<p class="lato size30 slim"><?php echo $content->title; ?></p>
+					<p class="aboutarrow"></p>
+				</div>
+				<div class="line3"></div>
+				
+				<div class="hpadding50c">
+					<?php echo $content->description; ?>
+											
+					</div>		
+					<div class="clearfix"></div>
+					
+					
+				</div>
+				
+
+				
+			<div class="clearfix"></div><br/><br/>
+			</div>
+			<!-- END CONTENT -->			
+			
+
+			
+		</div>
+		
+		
+	</div>
+	<!-- END OF CONTENT -->
